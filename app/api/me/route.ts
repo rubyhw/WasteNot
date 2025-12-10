@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/src/lib/supabase/admin";
+import { supabaseAdmin } from "../../../src/lib/supabase/admin";
 
 export async function GET(req: Request) {
   // Temporary dev mode: frontend can pass x-user-id header

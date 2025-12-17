@@ -1,0 +1,66 @@
+'use client';
+
+import { useState } from 'react';
+
+export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navItems = [
+    { label: 'Home', href: '#' },
+    { label: 'Transactions', href: '#' },
+    { label: 'Reports', href: '#' },
+    { label: 'Account', href: '#' },
+  ];
+
+  return (
+    <header className="header">
+      <div className="header-container">
+        <div className="header-logo">
+          <span className="logo-text">WasteNot</span>
+        </div>
+        
+        <nav className="header-nav">
+          {/* Desktop Navigation */}
+          <div className="desktop-nav">
+            {navItems.map((item) => (
+              <a key={item.label} href={item.href} className="nav-link">
+                {item.label}
+              </a>
+            ))}
+          </div>
+          
+          {/* Mobile Hamburger Menu */}
+          <button 
+            className="menu-toggle"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+          </button>
+          
+          {/* Mobile Dropdown Menu */}
+          <div className={`dropdown-menu ${isMenuOpen ? 'open' : ''}`}>
+            {navItems.map((item) => (
+              <a 
+                key={item.label} 
+                href={item.href} 
+                className="dropdown-item"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+          
+          <div className="header-actions">
+            <button className="btn-login">Login</button>
+            <button className="btn-register">Register</button>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+}
+

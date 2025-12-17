@@ -200,19 +200,18 @@ body {
   box-shadow: 0 6px 16px rgba(35, 164, 85, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-  /* Hide desktop navigation on mobile */
+  //Hide navigation on phone
   .desktop-nav {
     display: none;
   }
   
-  /* Show hamburger menu on mobile */
+  //Show navigation bar on phone
   .menu-toggle {
     display: flex;
   }
   
-  /* Show dropdown menu on mobile */
+  //show dropdown menu on phone
   .dropdown-menu {
     display: block;
     right: -20px;

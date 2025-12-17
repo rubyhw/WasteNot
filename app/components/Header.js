@@ -9,7 +9,6 @@ export default function Header() {
     { label: 'Home', href: '#' },
     { label: 'Transactions', href: '#' },
     { label: 'Reports', href: '#' },
-    { label: 'Account', href: '#' },
   ];
 
   return (

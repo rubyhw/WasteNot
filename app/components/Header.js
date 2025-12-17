@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { label: 'Home', href: '#' },
-    { label: 'Transactions', href: '#' },
-    { label: 'Reports', href: '#' },
+    { label: 'Home', href: '/' },
+    { label: 'Transactions', href: '/transactions' },
+    { label: 'Reports', href: '/reports' },
   ];
 
   return (
@@ -22,9 +23,9 @@ export default function Header() {
           {/* Desktop Navigation */}
           <div className="desktop-nav">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className="nav-link">
+              <Link key={item.label} href={item.href} className="nav-link">
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
           
@@ -42,14 +43,14 @@ export default function Header() {
           {/* Mobile Dropdown Menu */}
           <div className={`dropdown-menu ${isMenuOpen ? 'open' : ''}`}>
             {navItems.map((item) => (
-              <a 
+              <Link 
                 key={item.label} 
                 href={item.href} 
                 className="dropdown-item"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
           

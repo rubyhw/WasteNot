@@ -1,3 +1,7 @@
 {
-  "/staff/recycle/[recyclerId]/page": "app/staff/recycle/[recyclerId]/page.js"
+  "/staff/recycle/[recyclerId]/page": "app/staff/recycle/[recyclerId]/page.js",
+  "/page": "app/page.js",
+  "/transactions/page": "app/transactions/page.js",
+  "/reports/page": "app/reports/page.js",
+  "/api/staff/transactions/route": "app/api/staff/transactions/route.js"
 }

@@ -122,6 +122,12 @@ export default function RecyclePage() {
       setSubmitting(true);
       setError(null);
 
+      // Get auth token from Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated. Please log in again.');
+      }
+
       // Prepare items array
       const items = RECYCLABLE_ITEMS
         .filter(item => {
@@ -143,6 +149,7 @@ export default function RecyclePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           recyclerId,
@@ -312,14 +319,7 @@ export default function RecyclePage() {
                   const displayValue = typeof value === 'string' && value !== '' ? value : numValue;
                   return (
                     <div key={item.id} className="modal-item-row">
-                      <span className="modal-item-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Image 
-                          src={item.icon} 
-                          alt={item.name}
-                          width={24}
-                          height={24}
-                          style={{ objectFit: 'contain' }}
-                        />
+                      <span className="modal-item-name">
                         {item.name}
                       </span>
                       <span className="modal-item-quantity">

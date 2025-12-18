@@ -5,17 +5,34 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
 import { supabase } from '@/lib/supabase';
-
-const highlights = [
-  { title: "Smart Sorting", text: "Learn what goes in recycling, compost, or landfill with simple guides." },
-  { title: "Local Drop-offs", text: "Find nearby collection points for glass, electronics, batteries, and more." },
-  { title: "Pickups & Reminders", text: "Schedule pickups and get reminders so you never miss collection day." },
-];
+import { RECYCLABLE_ITEMS } from './config/recyclableItems';
 
 const steps = [
-  { label: "Scan or search", detail: "Look up an item and see how to recycle it properly." },
-  { label: "Drop or schedule", detail: "Get directions to a drop-off or book a pickup." },
-  { label: "Track impact", detail: "See how much waste you've diverted from landfills." },
+  {
+    label: "Register an Account",
+    detail:
+      "Users create an account on the WasteNot website using a valid email and password.",
+  },
+  {
+    label: "Bring Recyclable Items to a Collection Centre",
+    detail:
+      "Users bring accepted recyclable items to a WasteNot recycling collection centre.",
+  },
+  {
+    label: "Provide Member Code to Staff",
+    detail:
+      "Users present their WasteNot Member Code to the collection centre staff for identification.",
+  },
+  {
+    label: "Staff Records Recycled Items",
+    detail:
+      "Collection centre staff calculate and record the quantities of recycled items for the user in the system.",
+  },
+  {
+    label: "Earn Rewards Points",
+    detail:
+      "Reward points are automatically awarded for every recycling activity and can be used to redeem available vouchers.",
+  },
 ];
 
 const stats = [
@@ -143,61 +160,47 @@ export default function Home() {
       <div className="hero">
         <div className="badge">WasteNot · Recycle better</div>
         <h1>
-          Give waste a second life with
-          <span className="gradient"> WasteNot</span>
+          Recycle Smarter. Earn Rewards.
+          <span className="gradient"> Protect the Environment.</span>
         </h1>
         <p className="lede">
-          WasteNot is your green companion for smarter recycling. Learn what to
-          recycle, find the right drop-off spots, and see your impact in real time.
+          WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
         </p>
         <div className="actions">
           <button className="btn primary">Get started</button>
           <button className="btn ghost">See how it works</button>
         </div>
-        <div className="hero-card">
-          <div>
-            <h3>Pickups, reminders, and guides</h3>
-            <p>Stop guessing—know exactly where each item goes.</p>
-            <div className="chips">
-              <span className="chip">Paper & Cardboard</span>
-              <span className="chip">Glass & Metals</span>
-              <span className="chip">E-waste</span>
-              <span className="chip">Batteries</span>
-            </div>
-          </div>
-          <Image
-            src="https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?auto=format&fit=crop&w=600&q=80"
-            alt="Recycling bins"
-            width={240}
-            height={160}
-            className="hero-img"
-            priority
-          />
-        </div>
       </div>
 
-      <section className="grid">
-        {highlights.map((item) => (
-          <div key={item.title} className="card">
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="stats">
-        {stats.map((item) => (
-          <div key={item.label} className="stat">
-            <div className="stat-value">{item.value}</div>
-            <div className="stat-label">{item.label}</div>
-          </div>
-        ))}
+      <section className="accepted-section">
+        <h2>Recyclable Items Accepted</h2>
+        <p className="lede">
+          WasteNot accepts five types of recyclable items at our collection centres:
+        </p>
+        <div className="accepted-grid">
+          {RECYCLABLE_ITEMS.map((item) => (
+            <div key={item.id} className="accepted-card">
+              <div className="accepted-icon">
+                <Image
+                  src={item.icon}
+                  alt={item.name}
+                  width={48}
+                  height={48}
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
+              <div className="accepted-info">
+                <h3>{item.name}</h3>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="steps">
         <div className="steps-header">
-          <h2>How WasteNot works</h2>
-          <p>Three simple steps to recycle with confidence.</p>
+          <h2>How WasteNot Works</h2>
+          <p>Follow these steps to start recycling, earning points, and redeeming rewards.</p>
         </div>
         <div className="steps-grid">
           {steps.map((step, idx) => (
@@ -227,9 +230,7 @@ export default function Home() {
       <footer className="footer">
         <div>WasteNot · Recycling made simple</div>
         <div className="footer-links">
-          <a href="#">Guides</a>
-          <a href="#">Drop-offs</a>
-          <a href="#">Contact</a>
+          <span>By CodeZap</span>
         </div>
       </footer>
         </>

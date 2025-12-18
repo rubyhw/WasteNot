@@ -1297,6 +1297,57 @@ h3 {
   color: var(--primary);
 }
 
+/* Accepted Items Section on Home */
+.accepted-section {
+  margin-top: 48px;
+}
+
+.accepted-section h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #0f2418;
+}
+
+.accepted-section .lede {
+  max-width: 640px;
+  margin-bottom: 24px;
+}
+
+.accepted-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-gap: 16px;
+  gap: 16px;
+}
+
+.accepted-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.accepted-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(35, 164, 85, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accepted-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f2418;
+}
+
 @media (max-width: 640px) {
   .find-recycler-card {
     padding: 24px;

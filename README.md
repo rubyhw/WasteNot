@@ -14,3 +14,6 @@ Then open http://localhost:3000.
 npm run build
 npm start
 ```
+## Run Live Demo
+Live Demo:
+🔗 https://waste-not-phi.vercel.app/

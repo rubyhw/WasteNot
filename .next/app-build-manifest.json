@@ -1,9 +1,9 @@
 {
   "pages": {
-    "/staff/recycle/[recyclerId]/page": [
+    "/reports/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/staff/recycle/[recyclerId]/page.js"
+      "static/chunks/app/reports/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
@@ -11,20 +11,20 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
     "/transactions/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/transactions/page.js"
     ],
-    "/reports/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/reports/page.js"
+      "static/chunks/app/page.js"
+    ],
+    "/staff/recycle/[recyclerId]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/staff/recycle/[recyclerId]/page.js"
     ]
   }
 }

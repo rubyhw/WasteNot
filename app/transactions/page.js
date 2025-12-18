@@ -16,6 +16,12 @@ export default function TransactionsPage() {
   const [recyclerSearch, setRecyclerSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchingRecycler, setSearchingRecycler] = useState(false);
+  const [selectedSessions, setSelectedSessions] = useState([]);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
+  const [editItems, setEditItems] = useState([]);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated and is centre_staff
@@ -166,6 +172,150 @@ export default function TransactionsPage() {
 
   const sessionList = Object.values(groupedSessions);
 
+  const toggleSessionSelected = (sessionId) => {
+    setSelectedSessions((prev) =>
+      prev.includes(sessionId)
+        ? prev.filter((id) => id !== sessionId)
+        : [...prev, sessionId]
+    );
+  };
+
+  const openEditModal = (session) => {
+    const items = session.items.map((item) => ({
+      itemId: item.itemId,
+      name: item.name,
+      unit: item.unit,
+      quantity: item.quantity,
+    }));
+    setEditingSession(session);
+    setEditItems(items);
+  };
+
+  const closeEditModal = () => {
+    setEditingSession(null);
+    setEditItems([]);
+  };
+
+  const handleEditQuantityChange = (itemId, value) => {
+    setEditItems((prev) =>
+      prev.map((item) =>
+        item.itemId === itemId
+          ? {
+              ...item,
+              quantity:
+                value === ''
+                  ? ''
+                  : isNaN(parseFloat(value))
+                  ? item.quantity
+                  : parseFloat(value),
+            }
+          : item
+      )
+    );
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSession) return;
+
+    try {
+      setEditSubmitting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const itemsPayload = editItems
+        .map((item) => ({
+          itemId: item.itemId,
+          quantity:
+            typeof item.quantity === 'string'
+              ? parseFloat(item.quantity)
+              : item.quantity,
+        }))
+        .filter(
+          (item) => item.quantity && !isNaN(item.quantity) && item.quantity > 0
+        );
+
+      if (itemsPayload.length === 0) {
+        alert('Please enter at least one item with quantity/weight > 0');
+        setEditSubmitting(false);
+        return;
+      }
+
+      const response = await fetch(
+        `/api/staff/transactions/${editingSession.sessionId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ items: itemsPayload }),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update transaction');
+      }
+
+      closeEditModal();
+      await fetchTransactions();
+    } catch (err) {
+      console.error('Error updating transaction:', err);
+      alert(err.message || 'Error updating transaction');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedSessions.length === 0) return;
+
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedSessions.length} transaction(s)?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeleteSubmitting(true);
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      if (!authSession) {
+        throw new Error('Not authenticated');
+      }
+
+      // Delete each selected session
+      for (const sessionId of selectedSessions) {
+        const response = await fetch(`/api/staff/transactions/${sessionId}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${authSession.access_token}`,
+          },
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete transaction');
+        }
+
+        if (editingSession && editingSession.sessionId === sessionId) {
+          closeEditModal();
+        }
+      }
+
+      setSelectedSessions([]);
+      await fetchTransactions();
+    } catch (err) {
+      console.error('Error deleting transaction:', err);
+      alert(err.message || 'Error deleting transaction');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
 
   // Show loading or redirect message while checking auth
   if (authLoading || !user || !isCentreStaff) {
@@ -269,6 +419,47 @@ export default function TransactionsPage() {
       {/* Transactions List (grouped by session) */}
       <div style={{ marginTop: '32px' }}>
         <h2 style={{ marginBottom: '20px' }}>Transaction History</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
+          <div />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {isDeleteMode && (
+              <button
+                type="button"
+                className="btn ghost"
+                style={{ padding: '8px 14px', fontSize: '14px' }}
+                onClick={() => {
+                  setIsDeleteMode(false);
+                  setSelectedSessions([]);
+                }}
+                disabled={deleteSubmitting}
+              >
+                Cancel
+              </button>
+            )}
+            {isDeleteMode ? (
+              <button
+                type="button"
+                className="btn danger"
+                style={{ padding: '8px 14px', fontSize: '14px' }}
+                onClick={handleDeleteSelected}
+                disabled={deleteSubmitting || selectedSessions.length === 0}
+              >
+                {deleteSubmitting
+                  ? 'Deleting...'
+                  : `Delete Selected (${selectedSessions.length})`}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn danger"
+                style={{ padding: '8px 14px', fontSize: '14px' }}
+                onClick={() => setIsDeleteMode(true)}
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
         {loading ? (
           <div className="loading">Loading transactions...</div>
         ) : sessionList.length === 0 ? (
@@ -280,28 +471,48 @@ export default function TransactionsPage() {
             {sessionList.map((session, index) => (
               <div key={session.sessionId} className="transaction-card">
                 <div className="transaction-header">
-                  <div>
-                    <h3
-                      style={{
-                        margin: '0 0 4px',
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        color: '#0f2418',
-                      }}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isDeleteMode && (
+                      <input
+                        type="checkbox"
+                        checked={selectedSessions.includes(session.sessionId)}
+                        onChange={() => toggleSessionSelected(session.sessionId)}
+                      />
+                    )}
+                    <div>
+                      <h3
+                        style={{
+                          margin: '0 0 4px',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          color: '#0f2418',
+                        }}
+                      >
+                        {index + 1}. ID: {session.sessionId}
+                      </h3>
+                      <p
+                        style={{
+                          margin: 0,
+                          color: 'var(--muted)',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {session.recycler?.public_id || 'N/A'}
+                        {session.recycler?.full_name &&
+                          ` - ${session.recycler.full_name}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      style={{ padding: '6px 10px', fontSize: '13px' }}
+                      onClick={() => openEditModal(session)}
+                      disabled={deleteSubmitting}
                     >
-                      {index + 1}. ID: {session.sessionId}
-                    </h3>
-                    <p
-                      style={{
-                        margin: 0,
-                        color: 'var(--muted)',
-                        fontSize: '14px',
-                      }}
-                    >
-                      {session.recycler?.public_id || 'N/A'}
-                      {session.recycler?.full_name &&
-                        ` - ${session.recycler.full_name}`}
-                    </p>
+                      Edit
+                    </button>
                   </div>
                 </div>
                 <div className="transaction-details">
@@ -328,7 +539,82 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Transaction Modal */}
+      {editingSession && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Transaction</h2>
+            <div className="modal-recycler-info">
+              <div className="modal-info-row">
+                <span className="modal-label">Recycler:</span>
+                <span className="modal-value">
+                  {editingSession.recycler?.public_id || 'N/A'}
+                  {editingSession.recycler?.full_name &&
+                    ` - ${editingSession.recycler.full_name}`}
+                </span>
+              </div>
+              <div className="modal-info-row">
+                <span className="modal-label">Transaction ID:</span>
+                <span className="modal-value">{editingSession.sessionId}</span>
+              </div>
+            </div>
+
+            <div className="modal-items-list">
+              <h3>Items</h3>
+              {editItems.map((item) => (
+                <div key={item.itemId} className="modal-item-row">
+                  <span className="modal-item-name">{item.name}</span>
+                  <span className="modal-item-quantity">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={
+                        item.quantity === ''
+                          ? ''
+                          : Number(item.quantity).toString()
+                      }
+                      onChange={(e) =>
+                        handleEditQuantityChange(item.itemId, e.target.value)
+                      }
+                      style={{
+                        width: '90px',
+                        marginRight: '8px',
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border)',
+                      }}
+                    />
+                    {item.unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={closeEditModal}
+                disabled={editSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={handleSaveEdit}
+                disabled={editSubmitting}
+              >
+                {editSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
 

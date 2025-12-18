@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '../contexts';
 
 export default function Header() {
@@ -27,6 +28,13 @@ export default function Header() {
     <header className="header">
       <div className="header-container">
         <div className="header-logo">
+          <Image
+            src="/favicon.png"
+            alt="WasteNot Logo"
+            width={40}
+            height={40}
+            className="logo-icon"
+          />
           <span className="logo-text">WasteNot</span>
         </div>
         

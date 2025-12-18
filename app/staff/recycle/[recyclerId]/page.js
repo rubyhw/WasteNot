@@ -2,17 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '../../../contexts';
 import { supabase } from '@/lib/supabase';
-
-// Fixed recyclable items with icons
-const RECYCLABLE_ITEMS = [
-  { id: 1, name: 'Plastic Bottle', icon: '🥤' },
-  { id: 2, name: 'Aluminium Tin', icon: '🥫' },
-  { id: 3, name: 'Newspaper', icon: '📰' },
-  { id: 4, name: 'Glass', icon: '🍶' },
-  { id: 5, name: 'Cardboard', icon: '📦' },
-];
+import { RECYCLABLE_ITEMS } from '../../../config/recyclableItems';
 
 export default function RecyclePage() {
   const params = useParams();
@@ -202,7 +195,15 @@ export default function RecyclePage() {
         <div className="recycling-items-grid">
           {RECYCLABLE_ITEMS.map(item => (
             <div key={item.id} className="recycling-item-card">
-              <div className="item-icon">{item.icon}</div>
+              <div className="item-icon">
+                <Image 
+                  src={item.icon} 
+                  alt={item.name}
+                  width={64}
+                  height={64}
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
               <h3>{item.name}</h3>
               <div className="quantity-controls">
                 <button
@@ -255,8 +256,15 @@ export default function RecyclePage() {
                 <h3>Items to Record:</h3>
                 {getSelectedItems().map(item => (
                   <div key={item.id} className="modal-item-row">
-                    <span className="modal-item-name">
-                      {item.icon} {item.name}
+                    <span className="modal-item-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Image 
+                        src={item.icon} 
+                        alt={item.name}
+                        width={24}
+                        height={24}
+                        style={{ objectFit: 'contain' }}
+                      />
+                      {item.name}
                     </span>
                     <span className="modal-item-quantity">
                       {quantities[item.id]} {quantities[item.id] === 1 ? 'item' : 'items'}

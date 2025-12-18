@@ -1,5 +1,3 @@
 {
-  "/page": "app/page.js",
-  "/staff/recycle/[recyclerId]/page": "app/staff/recycle/[recyclerId]/page.js",
-  "/api/staff/lookup-recycler/route": "app/api/staff/lookup-recycler/route.js"
+  "/staff/recycle/[recyclerId]/page": "app/staff/recycle/[recyclerId]/page.js"
 }

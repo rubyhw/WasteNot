@@ -201,27 +201,27 @@ body {
 }
 
 @media (max-width: 768px) {
-  //Hide navigation on phone
+  /* Hide navigation on phone */
   .desktop-nav {
     display: none;
   }
-  
-  //Show navigation bar on phone
+
+  /* Show navigation bar on phone */
   .menu-toggle {
     display: flex;
   }
-  
-  //show dropdown menu on phone
+
+  /* Show dropdown menu on phone */
   .dropdown-menu {
     display: block;
     right: -20px;
     min-width: 200px;
   }
-  
+
   .header-actions {
     gap: 8px;
   }
-  
+
   .btn-login,
   .btn-register {
     padding: 8px 16px;
@@ -1373,6 +1373,62 @@ h3 {
   font-size: 14px;
   font-weight: 500;
   color: var(--primary);
+}
+
+/* Plastics & Metals Ranking */
+.plastics-ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.plastics-ranking-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.plastics-ranking-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(15, 36, 24, 0.15);
+}
+
+.plastics-rank-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  background: #0f2418;
+  color: #ffffff;
+}
+
+.plastics-ranking-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plastics-item-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #0f2418;
+}
+
+.plastics-item-qty {
+  font-size: 14px;
+  color: var(--muted);
 }
 
 /* Recycling Page Styles */

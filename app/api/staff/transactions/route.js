@@ -60,6 +60,7 @@ export async function GET(request) {
     // Get URL parameters
     const { searchParams } = new URL(request.url);
     const recyclerId = searchParams.get('recyclerId');
+    const period = searchParams.get('period'); // e.g. 'month' or 'year'
 
     // Fetch transactions with related data
     let query = supabase
@@ -78,8 +79,29 @@ export async function GET(request) {
           full_name
         )
       `)
-      .eq('collection_centre_id', collectionCentreId)
-      .order('created_at', { ascending: false });
+      .eq('collection_centre_id', collectionCentreId);
+
+    // Optional: filter by current month or current year
+    if (period === 'month' || period === 'year') {
+      const now = new Date();
+      let start;
+      let end;
+
+      if (period === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      } else {
+        // year
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear() + 1, 0, 1);
+      }
+
+      query = query
+        .gte('created_at', start.toISOString())
+        .lt('created_at', end.toISOString());
+    }
+
+    query = query.order('created_at', { ascending: false });
 
     // If recyclerId is provided, filter by that recycler
     if (recyclerId) {

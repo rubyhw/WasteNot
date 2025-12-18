@@ -377,23 +377,6 @@ export default function TransactionsPage() {
 
       {/* Totals Section */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        {/* Collection Centre Totals */}
-        <div className="totals-card" style={{ padding: '20px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-          <h3 style={{ marginBottom: '16px', color: 'var(--primary)' }}>Total Collected by Centre (Per Item)</h3>
-          {Object.keys(centreTotals).length === 0 ? (
-            <p style={{ color: 'var(--muted)' }}>No data available</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {Object.entries(centreTotals).map(([itemName, total]) => (
-                <div key={itemName} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                  <span style={{ fontWeight: 500 }}>{itemName}:</span>
-                  <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{total} {RECYCLABLE_ITEMS.find(i => i.name === itemName)?.unit || 'units'}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Recycler Totals (if selected) */}
         {selectedRecycler && recyclerTotals && (
           <div className="totals-card" style={{ padding: '20px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>

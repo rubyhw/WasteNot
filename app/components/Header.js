@@ -13,11 +13,11 @@ export default function Header() {
     { label: 'Home', href: '/' },
   ];
 
-  // Only show Transactions and Reports for centre_staff
+  // Only show Transaction and Report for centre_staff
   const centreStaffNavItems = isCentreStaff
     ? [
-        { label: 'Transactions', href: '/transactions' },
-        { label: 'Reports', href: '/reports' },
+        { label: 'Transaction', href: '/transactions' },
+        { label: 'Report', href: '/reports' },
       ]
     : [];
 

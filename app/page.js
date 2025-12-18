@@ -25,7 +25,7 @@ const stats = [
 
 export default function Home() {
   const { isCentreStaff, user, loading: authLoading } = useAuth();
-  const [userId, setUserId] = useState('');
+  const [memberCode, setMemberCode] = useState('');
   const [recyclerData, setRecyclerData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,8 +35,8 @@ export default function Home() {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!userId.trim()) {
-      setError('Please enter a user ID');
+    if (!memberCode.trim()) {
+      setError('Please enter a member code');
       return;
     }
 
@@ -45,11 +45,11 @@ export default function Home() {
     setRecyclerData(null);
 
     try {
-      // Fetch profile from profiles table
+      // Fetch profile from profiles table using public_id (member code)
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId.trim())
+        .eq('public_id', memberCode.trim())
         .single();
 
       if (profileError) {
@@ -83,17 +83,17 @@ export default function Home() {
         <section className="find-recycler-section">
           <div className="find-recycler-card">
             <h2>Find Recycler</h2>
-            <p className="section-subtitle">Search for a recycler by user ID</p>
+            <p className="section-subtitle">Search for a recycler by member code</p>
             
             <form onSubmit={handleSearch} className="find-recycler-form">
               <div className="form-group">
-                <label htmlFor="userId">User ID</label>
+                <label htmlFor="memberCode">Member Code</label>
                 <input
-                  id="userId"
+                  id="memberCode"
                   type="text"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="Enter auth.users.id"
+                  value={memberCode}
+                  onChange={(e) => setMemberCode(e.target.value)}
+                  placeholder="Enter member code"
                   required
                   disabled={loading}
                   className="form-input"

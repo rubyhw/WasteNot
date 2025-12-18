@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
 import { supabase } from '@/lib/supabase';
 
@@ -24,9 +25,9 @@ const stats = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const { isCentreStaff, user, loading: authLoading } = useAuth();
   const [memberCode, setMemberCode] = useState('');
-  const [recyclerData, setRecyclerData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -42,35 +43,30 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
-    setRecyclerData(null);
 
     try {
-      // Fetch profile from profiles table using public_id (member code)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('public_id', memberCode.trim())
-        .single();
+      // Call API to lookup recycler by public_id
+      const response = await fetch('/api/staff/lookup-recycler', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ memberCode: memberCode.trim() }),
+      });
 
-      if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          setError('User not found');
-        } else {
-          setError(profileError.message);
-        }
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Display the error message (which includes role info if applicable)
+        setError(data.error || 'Recycler not found');
         setLoading(false);
         return;
       }
 
-      // Get email from profile (if stored there) or leave as null
-      // Note: Email from auth.users requires admin API, so we use profile data
-      setRecyclerData({
-        name: profile.full_name || profile.name || 'N/A',
-        email: profile.email || null,
-        points: profile.points_total || profile.points || 0,
-      });
+      // Navigate to recycling page
+      router.push(`/staff/recycle/${data.profile.id}`);
     } catch (err) {
-      setError(err.message || 'An error occurred while fetching user data');
+      setError(err.message || 'An error occurred while fetching recycler data');
     } finally {
       setLoading(false);
     }
@@ -112,28 +108,6 @@ export default function Home() {
               <div className="recycler-error">
                 <span className="error-icon">⚠️</span>
                 <span>{error}</span>
-              </div>
-            )}
-
-            {recyclerData && (
-              <div className="recycler-info">
-                <h3>Recycler Information</h3>
-                <div className="recycler-details">
-                  <div className="detail-row">
-                    <span className="detail-label">Name:</span>
-                    <span className="detail-value">{recyclerData.name}</span>
-                  </div>
-                  {recyclerData.email && (
-                    <div className="detail-row">
-                      <span className="detail-label">Email:</span>
-                      <span className="detail-value">{recyclerData.email}</span>
-                    </div>
-                  )}
-                  <div className="detail-row">
-                    <span className="detail-label">Current Points:</span>
-                    <span className="detail-value points">{recyclerData.points}</span>
-                  </div>
-                </div>
               </div>
             )}
           </div>

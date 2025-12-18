@@ -70,7 +70,7 @@ export default function Header() {
               <>
                 <div className="user-info">
                   <span className="user-name">
-                    {profile?.email || profile?.name || user.email}
+                    {profile?.email || profile?.full_name || user.email}
                   </span>
                   {isCentreStaff && (
                     <span className="user-role">Centre Staff</span>

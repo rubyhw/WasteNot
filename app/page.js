@@ -1,4 +1,9 @@
+'use client';
+
 import Image from "next/image";
+import { useState } from 'react';
+import { useAuth } from './contexts';
+import { supabase } from '@/lib/supabase';
 
 const highlights = [
   { title: "Smart Sorting", text: "Learn what goes in recycling, compost, or landfill with simple guides." },
@@ -9,7 +14,7 @@ const highlights = [
 const steps = [
   { label: "Scan or search", detail: "Look up an item and see how to recycle it properly." },
   { label: "Drop or schedule", detail: "Get directions to a drop-off or book a pickup." },
-  { label: "Track impact", detail: "See how much waste you’ve diverted from landfills." },
+  { label: "Track impact", detail: "See how much waste you've diverted from landfills." },
 ];
 
 const stats = [
@@ -19,8 +24,125 @@ const stats = [
 ];
 
 export default function Home() {
+  const { isCentreStaff, user, loading: authLoading } = useAuth();
+  const [userId, setUserId] = useState('');
+  const [recyclerData, setRecyclerData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // Show general content only if not logged in or not centre_staff
+  const showGeneralContent = !authLoading && (!user || !isCentreStaff);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!userId.trim()) {
+      setError('Please enter a user ID');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setRecyclerData(null);
+
+    try {
+      // Fetch profile from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId.trim())
+        .single();
+
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          setError('User not found');
+        } else {
+          setError(profileError.message);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Get email from profile (if stored there) or leave as null
+      // Note: Email from auth.users requires admin API, so we use profile data
+      setRecyclerData({
+        name: profile.full_name || profile.name || 'N/A',
+        email: profile.email || null,
+        points: profile.points_total || profile.points || 0,
+      });
+    } catch (err) {
+      setError(err.message || 'An error occurred while fetching user data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="page">
+      {/* Find Recycler Section - Only for Centre Staff */}
+      {!authLoading && isCentreStaff && (
+        <section className="find-recycler-section">
+          <div className="find-recycler-card">
+            <h2>Find Recycler</h2>
+            <p className="section-subtitle">Search for a recycler by user ID</p>
+            
+            <form onSubmit={handleSearch} className="find-recycler-form">
+              <div className="form-group">
+                <label htmlFor="userId">User ID</label>
+                <input
+                  id="userId"
+                  type="text"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="Enter auth.users.id"
+                  required
+                  disabled={loading}
+                  className="form-input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn primary"
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </button>
+            </form>
+
+            {error && (
+              <div className="recycler-error">
+                <span className="error-icon">⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            {recyclerData && (
+              <div className="recycler-info">
+                <h3>Recycler Information</h3>
+                <div className="recycler-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Name:</span>
+                    <span className="detail-value">{recyclerData.name}</span>
+                  </div>
+                  {recyclerData.email && (
+                    <div className="detail-row">
+                      <span className="detail-label">Email:</span>
+                      <span className="detail-value">{recyclerData.email}</span>
+                    </div>
+                  )}
+                  <div className="detail-row">
+                    <span className="detail-label">Current Points:</span>
+                    <span className="detail-value points">{recyclerData.points}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* General Home Page Content - Only for non-logged-in users or non-centre_staff */}
+      {showGeneralContent && (
+        <>
       <div className="hero">
         <div className="badge">WasteNot · Recycle better</div>
         <h1>
@@ -113,6 +235,8 @@ export default function Home() {
           <a href="#">Contact</a>
         </div>
       </footer>
+        </>
+      )}
     </main>
   );
 }

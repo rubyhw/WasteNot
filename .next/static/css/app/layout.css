@@ -1318,6 +1318,74 @@ h3 {
   }
 }
 
+/* Recycler Profile Card */
+.recycler-profile-card {
+  margin-top: 24px;
+  background: var(--card);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(26, 111, 60, 0.1);
+}
+
+.recycler-profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(26, 111, 60, 0.2);
+  border-color: var(--primary);
+  background: rgba(35, 164, 85, 0.02);
+}
+
+.recycler-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.recycler-profile-icon {
+  font-size: 48px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(35, 164, 85, 0.1);
+  border-radius: 12px;
+}
+
+.recycler-profile-info {
+  flex: 1 1;
+}
+
+.recycler-profile-name {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f2418;
+}
+
+.recycler-profile-code {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.recycler-profile-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.action-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
 /* Recycling Page Styles */
 .recycling-header {
   display: flex;

@@ -30,6 +30,7 @@ export default function Home() {
   const [memberCode, setMemberCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [recyclerProfile, setRecyclerProfile] = useState(null);
   
   // Show general content only if not logged in or not centre_staff
   const showGeneralContent = !authLoading && (!user || !isCentreStaff);
@@ -43,6 +44,7 @@ export default function Home() {
 
     setLoading(true);
     setError(null);
+    setRecyclerProfile(null);
 
     try {
       // Call API to lookup recycler by public_id
@@ -63,12 +65,18 @@ export default function Home() {
         return;
       }
 
-      // Navigate to recycling page
-      router.push(`/staff/recycle/${data.profile.id}`);
+      // Store the recycler profile to display
+      setRecyclerProfile(data.profile);
     } catch (err) {
       setError(err.message || 'An error occurred while fetching recycler data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (recyclerProfile) {
+      router.push(`/staff/recycle/${recyclerProfile.id}`);
     }
   };
 
@@ -108,6 +116,21 @@ export default function Home() {
               <div className="recycler-error">
                 <span className="error-icon">⚠️</span>
                 <span>{error}</span>
+              </div>
+            )}
+
+            {recyclerProfile && (
+              <div className="recycler-profile-card" onClick={handleProfileClick}>
+                <div className="recycler-profile-header">
+                  <div className="recycler-profile-icon">👤</div>
+                  <div className="recycler-profile-info">
+                    <h3 className="recycler-profile-name">{recyclerProfile.full_name || 'N/A'}</h3>
+                    <p className="recycler-profile-code">Member Code: {recyclerProfile.public_id}</p>
+                  </div>
+                </div>
+                <div className="recycler-profile-action">
+                  <span className="action-text">Click to record recycling →</span>
+                </div>
               </div>
             )}
           </div>

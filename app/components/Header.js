@@ -55,8 +55,8 @@ export default function Header() {
           </div>
           
           <div className="header-actions">
-            <button className="btn-login">Login</button>
-            <button className="btn-register">Register</button>
+            <Link href="/login" className="btn-login">Login</Link>
+            <Link href="/register" className="btn-register">Register</Link>
           </div>
         </nav>
       </div>

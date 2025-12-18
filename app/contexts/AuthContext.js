@@ -6,13 +6,13 @@ import { supabase } from '@/lib/supabase';
 
 const AuthContext = createContext({});
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

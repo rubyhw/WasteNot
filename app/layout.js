@@ -1,5 +1,6 @@
 import "./globals.css";
 import Header from "./components/Header";
+import ClientProviders from "./providers/ClientProviders";
 
 export const metadata = {
   title: "WasteNot | Recycle Smarter",
@@ -26,8 +27,10 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <Header />
-        {children}
+        <ClientProviders>
+          <Header />
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

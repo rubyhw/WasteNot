@@ -1,11 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts';
 
 export default function TransactionsPage() {
+  const router = useRouter();
+  const { user, isCentreStaff, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    // Check if user is authenticated and is centre_staff
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      if (!isCentreStaff) {
+        router.push('/');
+        return;
+      }
+    }
+  }, [user, isCentreStaff, authLoading, router]);
 
   // Mock data for demonstration - replace with actual Supabase queries
   const mockTransactions = [
@@ -100,6 +118,15 @@ export default function TransactionsPage() {
     scheduled: transactions.filter(t => t.status === 'scheduled').length,
     totalWeight: transactions.reduce((sum, t) => sum + parseFloat(t.weight), 0).toFixed(1),
   };
+
+  // Show loading or redirect message while checking auth
+  if (authLoading || !user || !isCentreStaff) {
+    return (
+      <main className="page">
+        <div className="loading">Loading...</div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">

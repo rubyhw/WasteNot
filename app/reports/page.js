@@ -1,10 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts';
 
 export default function ReportsPage() {
+  const router = useRouter();
+  const { user, isCentreStaff, loading: authLoading } = useAuth();
   const [timeRange, setTimeRange] = useState('month');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if user is authenticated and is centre_staff
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      if (!isCentreStaff) {
+        router.push('/');
+        return;
+      }
+    }
+  }, [user, isCentreStaff, authLoading, router]);
 
   // Mock data for demonstration
   const reportData = {
@@ -55,6 +73,15 @@ export default function ReportsPage() {
   };
 
   const currentData = reportData[timeRange];
+
+  // Show loading or redirect message while checking auth
+  if (authLoading || !user || !isCentreStaff) {
+    return (
+      <main className="page">
+        <div className="loading">Loading...</div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">

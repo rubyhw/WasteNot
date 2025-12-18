@@ -2,15 +2,26 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '../contexts';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, profile, signOut, isCentreStaff, loading } = useAuth();
 
-  const navItems = [
+  // Base navigation items
+  const baseNavItems = [
     { label: 'Home', href: '/' },
-    { label: 'Transactions', href: '/transactions' },
-    { label: 'Reports', href: '/reports' },
   ];
+
+  // Only show Transactions and Reports for centre_staff
+  const centreStaffNavItems = isCentreStaff
+    ? [
+        { label: 'Transactions', href: '/transactions' },
+        { label: 'Reports', href: '/reports' },
+      ]
+    : [];
+
+  const navItems = [...baseNavItems, ...centreStaffNavItems];
 
   return (
     <header className="header">
@@ -55,8 +66,26 @@ export default function Header() {
           </div>
           
           <div className="header-actions">
-            <Link href="/login" className="btn-login">Login</Link>
-            <Link href="/register" className="btn-register">Register</Link>
+            {!loading && user ? (
+              <>
+                <div className="user-info">
+                  <span className="user-name">
+                    {profile?.email || profile?.name || user.email}
+                  </span>
+                  {isCentreStaff && (
+                    <span className="user-role">Centre Staff</span>
+                  )}
+                </div>
+                <button onClick={signOut} className="btn-login">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="btn-login">Login</Link>
+                <Link href="/register" className="btn-register">Register</Link>
+              </>
+            )}
           </div>
         </nav>
       </div>

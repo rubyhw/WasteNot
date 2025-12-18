@@ -20,11 +20,11 @@ export default function RecyclePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Initialize quantities to 0 for all items
+  // Initialize quantities to 0 for quantity items, empty string for weight items
   useEffect(() => {
     const initialQuantities = {};
     RECYCLABLE_ITEMS.forEach(item => {
-      initialQuantities[item.id] = 0;
+      initialQuantities[item.id] = item.measurementType === 'weight' ? '' : 0;
     });
     setQuantities(initialQuantities);
   }, []);
@@ -84,11 +84,33 @@ export default function RecyclePage() {
     });
   };
 
+  const handleWeightChange = (itemId, value) => {
+    // Allow empty string, numbers, and decimal points
+    if (value === '' || value === '.') {
+      setQuantities(prev => ({
+        ...prev,
+        [itemId]: value,
+      }));
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setQuantities(prev => ({
+        ...prev,
+        [itemId]: numValue,
+      }));
+    }
+  };
+
   const handleConfirm = () => {
-    // Check if at least one item has quantity > 0
-    const hasItems = Object.values(quantities).some(qty => qty > 0);
+    // Check if at least one item has quantity/weight > 0
+    const hasItems = Object.values(quantities).some(qty => {
+      const numValue = typeof qty === 'string' ? parseFloat(qty) : qty;
+      return numValue > 0;
+    });
     if (!hasItems) {
-      setError('Please select at least one item with quantity > 0');
+      setError('Please enter at least one item with quantity/weight > 0');
       return;
     }
     setShowModal(true);
@@ -102,11 +124,19 @@ export default function RecyclePage() {
 
       // Prepare items array
       const items = RECYCLABLE_ITEMS
-        .filter(item => quantities[item.id] > 0)
-        .map(item => ({
-          itemId: item.id,
-          quantity: quantities[item.id],
-        }));
+        .filter(item => {
+          const value = quantities[item.id];
+          const numValue = typeof value === 'string' ? parseFloat(value) : value;
+          return numValue > 0;
+        })
+        .map(item => {
+          const value = quantities[item.id];
+          const numValue = typeof value === 'string' ? parseFloat(value) : value;
+          return {
+            itemId: item.id,
+            quantity: numValue,
+          };
+        });
 
       // Call API to create session and transactions
       const response = await fetch('/api/staff/create-session', {
@@ -136,7 +166,11 @@ export default function RecyclePage() {
   };
 
   const getSelectedItems = () => {
-    return RECYCLABLE_ITEMS.filter(item => quantities[item.id] > 0);
+    return RECYCLABLE_ITEMS.filter(item => {
+      const value = quantities[item.id];
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      return numValue > 0;
+    });
   };
 
   if (authLoading || loading) {
@@ -205,22 +239,37 @@ export default function RecyclePage() {
                 />
               </div>
               <h3>{item.name}</h3>
-              <div className="quantity-controls">
-                <button
-                  className="quantity-btn minus"
-                  onClick={() => handleQuantityChange(item.id, -1)}
-                  disabled={!quantities[item.id] || quantities[item.id] === 0}
-                >
-                  −
-                </button>
-                <div className="quantity-display">{quantities[item.id] || 0}</div>
-                <button
-                  className="quantity-btn plus"
-                  onClick={() => handleQuantityChange(item.id, 1)}
-                >
-                  +
-                </button>
-              </div>
+              {item.measurementType === 'quantity' ? (
+                <div className="quantity-controls">
+                  <button
+                    className="quantity-btn minus"
+                    onClick={() => handleQuantityChange(item.id, -1)}
+                    disabled={!quantities[item.id] || quantities[item.id] === 0}
+                  >
+                    −
+                  </button>
+                  <div className="quantity-display">{quantities[item.id] || 0}</div>
+                  <button
+                    className="quantity-btn plus"
+                    onClick={() => handleQuantityChange(item.id, 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              ) : (
+                <div className="weight-input-container">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={quantities[item.id] || ''}
+                    onChange={(e) => handleWeightChange(item.id, e.target.value)}
+                    placeholder="0.0"
+                    className="weight-input"
+                  />
+                  <span className="weight-unit">kg</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -229,7 +278,10 @@ export default function RecyclePage() {
           <button
             onClick={handleConfirm}
             className="btn primary large"
-            disabled={!Object.values(quantities).some(qty => qty > 0)}
+            disabled={!Object.values(quantities).some(qty => {
+              const numValue = typeof qty === 'string' ? parseFloat(qty) : qty;
+              return numValue > 0;
+            })}
           >
             Confirm
           </button>
@@ -254,23 +306,28 @@ export default function RecyclePage() {
 
               <div className="modal-items-list">
                 <h3>Items to Record:</h3>
-                {getSelectedItems().map(item => (
-                  <div key={item.id} className="modal-item-row">
-                    <span className="modal-item-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Image 
-                        src={item.icon} 
-                        alt={item.name}
-                        width={24}
-                        height={24}
-                        style={{ objectFit: 'contain' }}
-                      />
-                      {item.name}
-                    </span>
-                    <span className="modal-item-quantity">
-                      {quantities[item.id]} {quantities[item.id] === 1 ? 'item' : 'items'}
-                    </span>
-                  </div>
-                ))}
+                {getSelectedItems().map(item => {
+                  const value = quantities[item.id];
+                  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                  const displayValue = typeof value === 'string' && value !== '' ? value : numValue;
+                  return (
+                    <div key={item.id} className="modal-item-row">
+                      <span className="modal-item-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Image 
+                          src={item.icon} 
+                          alt={item.name}
+                          width={24}
+                          height={24}
+                          style={{ objectFit: 'contain' }}
+                        />
+                        {item.name}
+                      </span>
+                      <span className="modal-item-quantity">
+                        {displayValue} {item.unit}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="modal-actions">

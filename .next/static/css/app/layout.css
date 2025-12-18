@@ -1524,6 +1524,40 @@ h3 {
   text-align: center;
 }
 
+/* Weight Input Styles */
+.weight-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.weight-input {
+  width: 120px;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--primary);
+  background: var(--card);
+  transition: all 0.2s ease;
+}
+
+.weight-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(35, 164, 85, 0.05);
+}
+
+.weight-unit {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .recycling-actions {
   display: flex;
   justify-content: center;

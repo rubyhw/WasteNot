@@ -50,8 +50,12 @@ export default function LoginPage() {
         console.warn('Profile not found:', profileError.message);
       }
 
-      // Success! Redirect to home or dashboard
-      router.push('/');
+      // Redirect based on role
+      if (profileData?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
       router.refresh();
     } catch (err) {
       setError(err.message || 'An unexpected error occurred');

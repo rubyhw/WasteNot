@@ -9,7 +9,11 @@ import {
     Calendar,
     UserPlus,
     PieChart,
-    BarChart3
+    BarChart3,
+    FileText,
+    Target,
+    MapPin,
+    X
 } from "lucide-react";
 import {
     AreaChart,
@@ -40,6 +44,9 @@ export default function DashboardPage() {
     });
     const [loadingAnalytics, setLoadingAnalytics] = useState(true);
     const [timeRange, setTimeRange] = useState('7d');
+
+    // Export Modal State
+    const [showExportModal, setShowExportModal] = useState(false);
 
     useEffect(() => {
         loadTopStats();
@@ -83,9 +90,21 @@ export default function DashboardPage() {
         }
     }
 
-    const handleExport = () => {
-        if (!analyticsData.exportData.length) return alert("No data to export");
+    // --- Report Generation Logic ---
 
+    const downloadCSV = (content, filename) => {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const exportRaw = () => {
+        if (!analyticsData.exportData.length) return alert("No data to export");
         const headers = ["ID", "Date", "Material", "Centre", "Quantity"];
         const csvContent = [
             headers.join(","),
@@ -93,16 +112,36 @@ export default function DashboardPage() {
                 `${row.id},${new Date(row.date).toLocaleDateString()},"${row.material}","${row.centre}",${row.quantity}`
             )
         ].join("\n");
-
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `recycling_data_${timeRange}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadCSV(csvContent, `wastenot_transactions_raw_${timeRange}.csv`);
+        setShowExportModal(false);
     };
+
+    const exportMaterial = () => {
+        if (!analyticsData.materialData.length) return alert("No data to export");
+        const headers = ["Material Type", "Total Quantity"];
+        const csvContent = [
+            headers.join(","),
+            ...analyticsData.materialData.map(row =>
+                `"${row.name}",${row.value}`
+            )
+        ].join("\n");
+        downloadCSV(csvContent, `wastenot_material_impact_${timeRange}.csv`);
+        setShowExportModal(false);
+    };
+
+    const exportCentre = () => {
+        if (!analyticsData.centreData.length) return alert("No data to export");
+        const headers = ["Collection Centre", "Total Quantity"];
+        const csvContent = [
+            headers.join(","),
+            ...analyticsData.centreData.map(row =>
+                `"${row.name}",${row.value}`
+            )
+        ].join("\n");
+        downloadCSV(csvContent, `wastenot_centre_performance_${timeRange}.csv`);
+        setShowExportModal(false);
+    };
+
 
     // Colors for Pie Chart
     const COLORS = ['#23a455', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -167,12 +206,12 @@ export default function DashboardPage() {
                     </div>
 
                     <button
-                        onClick={handleExport}
+                        onClick={() => setShowExportModal(true)}
                         className="btn"
                         style={{ background: 'white', borderColor: 'var(--border)', color: 'var(--muted)', display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, height: 36, padding: '0 16px' }}
                     >
                         <Download size={14} />
-                        Export CSV
+                        Generate Reports
                     </button>
                 </div>
 
@@ -268,6 +307,82 @@ export default function DashboardPage() {
                 </div>
 
             </div>
+
+            {/* Export Modal */}
+            {showExportModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)',
+                    zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.2s ease-out'
+                }}>
+                    <div className="card" style={{ width: '100%', maxWidth: 500, padding: 0, border: 'none', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0, fontSize: 18 }}>Generate Analytical Reports</h3>
+                            <button onClick={() => setShowExportModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                            {/* Option 1: Raw Data */}
+                            <button onClick={exportRaw} style={{
+                                display: 'flex', alignItems: 'center', gap: 16, padding: 16,
+                                border: '1px solid var(--border)', borderRadius: 12, background: 'white',
+                                cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+                            }}
+                                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
+                                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                            >
+                                <div style={{ padding: 10, background: '#f8fafc', borderRadius: 8, color: '#64748b' }}>
+                                    <FileText size={24} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>Transaction Log (Raw Data)</div>
+                                    <div style={{ fontSize: 13, color: '#64748b' }}>Complete detailed list of every transaction. Best for auditing.</div>
+                                </div>
+                            </button>
+
+                            {/* Option 2: Material Impact */}
+                            <button onClick={exportMaterial} style={{
+                                display: 'flex', alignItems: 'center', gap: 16, padding: 16,
+                                border: '1px solid var(--border)', borderRadius: 12, background: 'white',
+                                cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+                            }}
+                                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
+                                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                            >
+                                <div style={{ padding: 10, background: '#ecfdf5', borderRadius: 8, color: '#23a455' }}>
+                                    <Target size={24} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>Material Impact Report</div>
+                                    <div style={{ fontSize: 13, color: '#64748b' }}>Aggregated volume by Material Type (Plastic, Paper, etc).</div>
+                                </div>
+                            </button>
+
+                            {/* Option 3: Centre Performance */}
+                            <button onClick={exportCentre} style={{
+                                display: 'flex', alignItems: 'center', gap: 16, padding: 16,
+                                border: '1px solid var(--border)', borderRadius: 12, background: 'white',
+                                cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
+                            }}
+                                onMouseOver={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                            >
+                                <div style={{ padding: 10, background: '#eff6ff', borderRadius: 8, color: '#3b82f6' }}>
+                                    <MapPin size={24} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>Centre Operations Report</div>
+                                    <div style={{ fontSize: 13, color: '#64748b' }}>Aggregated volume performance by Collection Centre.</div>
+                                </div>
+                            </button>
+
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

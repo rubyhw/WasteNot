@@ -63,7 +63,6 @@ export async function POST(request) {
             const { error: profileError } = await supabase.from('profiles').upsert({
                 id: user.id,
                 full_name: fullName,
-                email: email, // Added sync
                 role: role
             });
             if (profileError) console.error("Profile sync error:", profileError);
@@ -90,7 +89,6 @@ export async function PUT(request) {
         // 2. Update Profile (Name/Role AND Email sync)
         const { error: profileError } = await supabase.from('profiles').update({
             full_name: fullName,
-            email: email, // Added sync
             role: role,
         }).eq('id', id);
 

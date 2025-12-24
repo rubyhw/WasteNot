@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
 import { supabase } from '@/lib/supabase';
@@ -43,12 +43,19 @@ const stats = [
 
 export default function Home() {
   const router = useRouter();
-  const { isCentreStaff, user, loading: authLoading } = useAuth();
+  const { isCentreStaff, user, role, loading: authLoading } = useAuth();
   const [memberCode, setMemberCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recyclerProfile, setRecyclerProfile] = useState(null);
-  
+
+  // Redirect admin to /admin
+  useEffect(() => {
+    if (!authLoading && user && role === 'admin') {
+      router.push('/admin');
+    }
+  }, [authLoading, user, role, router]);
+
   // Show general content only if not logged in or not centre_staff
   const showGeneralContent = !authLoading && (!user || !isCentreStaff);
 
@@ -105,7 +112,7 @@ export default function Home() {
           <div className="find-recycler-card">
             <h2>Find Recycler</h2>
             <p className="section-subtitle">Search for a recycler by member code</p>
-            
+
             <form onSubmit={handleSearch} className="find-recycler-form">
               <div className="form-group">
                 <label htmlFor="memberCode">Member Code</label>
@@ -157,82 +164,82 @@ export default function Home() {
       {/* General Home Page Content - Only for non-logged-in users or non-centre_staff */}
       {showGeneralContent && (
         <>
-      <div className="hero">
-        <div className="badge">WasteNot · Recycle better</div>
-        <h1>
-          Recycle Smarter. Earn Rewards.
-          <span className="gradient"> Protect the Environment.</span>
-        </h1>
-        <p className="lede">
-          WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
-        </p>
-        <div className="actions">
-          <button className="btn primary">Get started</button>
-          <button className="btn ghost">See how it works</button>
-        </div>
-      </div>
-
-      <section className="accepted-section">
-        <h2>Recyclable Items Accepted</h2>
-        <p className="lede">
-          WasteNot accepts five types of recyclable items at our collection centres:
-        </p>
-        <div className="accepted-grid">
-          {RECYCLABLE_ITEMS.map((item) => (
-            <div key={item.id} className="accepted-card">
-              <div className="accepted-icon">
-                <Image
-                  src={item.icon}
-                  alt={item.name}
-                  width={48}
-                  height={48}
-                  style={{ objectFit: 'contain' }}
-                />
-              </div>
-              <div className="accepted-info">
-                <h3>{item.name}</h3>
-              </div>
+          <div className="hero">
+            <div className="badge">WasteNot · Recycle better</div>
+            <h1>
+              Recycle Smarter. Earn Rewards.
+              <span className="gradient"> Protect the Environment.</span>
+            </h1>
+            <p className="lede">
+              WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
+            </p>
+            <div className="actions">
+              <button className="btn primary">Get started</button>
+              <button className="btn ghost">See how it works</button>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
 
-      <section className="steps">
-        <div className="steps-header">
-          <h2>How WasteNot Works</h2>
-          <p>Follow these steps to start recycling, earning points, and redeeming rewards.</p>
-        </div>
-        <div className="steps-grid">
-          {steps.map((step, idx) => (
-            <div key={step.label} className="step-card">
-              <div className="step-number">0{idx + 1}</div>
-              <h3>{step.label}</h3>
-              <p>{step.detail}</p>
+          <section className="accepted-section">
+            <h2>Recyclable Items Accepted</h2>
+            <p className="lede">
+              WasteNot accepts five types of recyclable items at our collection centres:
+            </p>
+            <div className="accepted-grid">
+              {RECYCLABLE_ITEMS.map((item) => (
+                <div key={item.id} className="accepted-card">
+                  <div className="accepted-icon">
+                    <Image
+                      src={item.icon}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  </div>
+                  <div className="accepted-info">
+                    <h3>{item.name}</h3>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      <section className="cta">
-        <div>
-          <p className="badge">Join the movement</p>
-          <h2>Start recycling smarter today</h2>
-          <p className="lede">
-            Set your location, get custom tips, and keep your community green.
-          </p>
-        </div>
-        <div className="cta-actions">
-          <button className="btn primary">Create account</button>
-          <button className="btn ghost">Learn more</button>
-        </div>
-      </section>
+          <section className="steps">
+            <div className="steps-header">
+              <h2>How WasteNot Works</h2>
+              <p>Follow these steps to start recycling, earning points, and redeeming rewards.</p>
+            </div>
+            <div className="steps-grid">
+              {steps.map((step, idx) => (
+                <div key={step.label} className="step-card">
+                  <div className="step-number">0{idx + 1}</div>
+                  <h3>{step.label}</h3>
+                  <p>{step.detail}</p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-      <footer className="footer">
-        <div>WasteNot · Recycling made simple</div>
-        <div className="footer-links">
-          <span>By CodeZap</span>
-        </div>
-      </footer>
+          <section className="cta">
+            <div>
+              <p className="badge">Join the movement</p>
+              <h2>Start recycling smarter today</h2>
+              <p className="lede">
+                Set your location, get custom tips, and keep your community green.
+              </p>
+            </div>
+            <div className="cta-actions">
+              <button className="btn primary">Create account</button>
+              <button className="btn ghost">Learn more</button>
+            </div>
+          </section>
+
+          <footer className="footer">
+            <div>WasteNot · Recycling made simple</div>
+            <div className="footer-links">
+              <span>By CodeZap</span>
+            </div>
+          </footer>
         </>
       )}
     </main>

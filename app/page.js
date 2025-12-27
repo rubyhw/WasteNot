@@ -167,8 +167,7 @@ export default function Home() {
           WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
         </p>
         <div className="actions">
-          <button className="btn primary">Get started</button>
-          <button className="btn ghost">See how it works</button>
+          <button className="btn primary">See how it works</button>
         </div>
       </div>
 

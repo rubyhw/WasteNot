@@ -1,6 +1,7 @@
 'use client';
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
@@ -222,8 +223,12 @@ export default function Home() {
           </p>
         </div>
         <div className="cta-actions">
-          <button className="btn primary">Create account</button>
-          <button className="btn ghost">Learn more</button>
+          <Link href="/register">
+            <button className="btn primary">Create account</button>
+          </Link>
+          <Link href="/learn-more">
+            <button className="btn ghost">Learn more</button>
+          </Link>
         </div>
       </section>
 

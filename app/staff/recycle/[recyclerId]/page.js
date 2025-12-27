@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '../../../contexts';
@@ -39,14 +39,7 @@ export default function RecyclePage() {
     }
   }, [user, isCentreStaff, authLoading, router]);
 
-  // Fetch recycler details
-  useEffect(() => {
-    if (recyclerId && !authLoading && user) {
-      fetchRecycler();
-    }
-  }, [recyclerId, authLoading, user]);
-
-  const fetchRecycler = async () => {
+  const fetchRecycler = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -72,7 +65,14 @@ export default function RecyclePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [recyclerId]);
+
+  // Fetch recycler details
+  useEffect(() => {
+    if (recyclerId && !authLoading && user) {
+      fetchRecycler();
+    }
+  }, [recyclerId, authLoading, user, fetchRecycler]);
 
   const handleQuantityChange = (itemId, delta) => {
     setQuantities(prev => {

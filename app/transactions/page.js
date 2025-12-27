@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts';
 import { supabase } from '@/lib/supabase';
@@ -42,9 +42,9 @@ export default function TransactionsPage() {
     if (user && isCentreStaff && !authLoading) {
       fetchTransactions();
     }
-  }, [user, isCentreStaff, authLoading, selectedRecycler]);
+  }, [user, isCentreStaff, authLoading, selectedRecycler, fetchTransactions]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -76,7 +76,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedRecycler]);
 
   const handleRecyclerSearch = async (e) => {
     e.preventDefault();

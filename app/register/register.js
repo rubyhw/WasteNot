@@ -46,6 +46,31 @@ export default function RegisterPage() {
       if (signUpError) {
         setError(signUpError.message || 'Registration failed.')
       } else {
+        // Create profile after successful registration
+        try {
+          const profileResponse = await fetch('/api/auth/create-profile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: data.user?.id,
+              fullName: name,
+              email: email
+            }),
+          });
+
+          const profileData = await profileResponse.json();
+
+          if (!profileResponse.ok) {
+            console.warn('Profile creation failed:', profileData.error);
+            // Don't fail registration if profile creation fails
+          }
+        } catch (profileError) {
+          console.warn('Profile creation error:', profileError);
+          // Don't fail registration if profile creation fails
+        }
+
         setMessage('Registration successful. Check your email (if required). Redirecting to login...')
         setTimeout(() => router.push('/login'), 1400)
       }

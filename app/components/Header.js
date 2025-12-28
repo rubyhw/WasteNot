@@ -22,7 +22,14 @@ export default function Header() {
       ]
     : [];
 
-  const navItems = [...baseNavItems, ...centreStaffNavItems];
+  // Show Profile for regular authenticated users
+  const userNavItems = user && !isCentreStaff
+    ? [
+        { label: 'Profile', href: '/profile' },
+      ]
+    : [];
+
+  const navItems = [...baseNavItems, ...centreStaffNavItems, ...userNavItems];
 
   return (
     <header className="header">

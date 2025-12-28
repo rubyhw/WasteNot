@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [error, setError] = useState(null)
   const [message, setMessage] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [role, setRole] = useState('recycler')
 
   // Password reset UI state (keeps previous reset feature)
   const [showReset, setShowReset] = useState(false)
@@ -37,17 +38,46 @@ export default function RegisterPage() {
       return
     }
 
+    // Validate role selection
+    if (!role || (role !== 'recycler' && role !== 'centre_staff')) {
+      setError('Please select a registration type.')
+      return
+    }
+
     setLoading(true)
     try {
+      console.log('Starting registration with role:', role);
+      
+      // Step 1: Create authentication user in Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp(
-        { email, password },
-        { data: { full_name: name } }
+        { 
+          email, 
+          password
+        },
+        {
+          data: { full_name: name }
+        }
       )
+      
       if (signUpError) {
+        console.error('Authentication signup error:', signUpError);
         setError(signUpError.message || 'Registration failed.')
-      } else {
-        // Create profile after successful registration
-        try {
+        setLoading(false)
+        return
+      }
+
+      if (!data || !data.user) {
+        console.error('No user data returned from signup');
+        setError('Registration failed. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      console.log('Authentication created successfully. User ID:', data.user.id);
+      
+      // Step 2: Create profile in profiles table with correct role
+      try {
+        console.log('Creating profile with role:', role, 'for user:', data.user.id);
           const profileResponse = await fetch('/api/auth/create-profile', {
             method: 'POST',
             headers: {
@@ -56,25 +86,68 @@ export default function RegisterPage() {
             body: JSON.stringify({
               userId: data.user?.id,
               fullName: name,
-              email: email
+              email: email,
+              role: role
             }),
           });
 
           const profileData = await profileResponse.json();
 
           if (!profileResponse.ok) {
-            console.warn('Profile creation failed:', profileData.error);
-            // Don't fail registration if profile creation fails
+            console.error('Profile creation failed:', profileData);
+            // Show more detailed error message
+            let errorMsg = profileData.error || 'Failed to create profile. Please contact support.';
+            if (profileData.details) {
+              errorMsg += ` (${profileData.details})`;
+            }
+            setError(errorMsg);
+            setLoading(false);
+            return;
           }
-        } catch (profileError) {
-          console.warn('Profile creation error:', profileError);
-          // Don't fail registration if profile creation fails
-        }
 
-        setMessage('Registration successful. Check your email (if required). Redirecting to login...')
-        setTimeout(() => router.push('/login'), 1400)
+          // Verify the role was set correctly in profiles table
+          if (profileData.profile && profileData.profile.role) {
+            console.log('Profile created successfully with role:', profileData.profile.role);
+            
+            // Verify centre_staff role
+            if (role === 'centre_staff' && profileData.profile.role !== 'centre_staff') {
+              console.error('Role mismatch! Expected centre_staff but got:', profileData.profile.role);
+              setError('Failed to set collection centre role. Please contact support.');
+              setLoading(false);
+              return;
+            }
+            
+            // Verify recycler role
+            if (role === 'recycler' && profileData.profile.role !== 'recycler') {
+              console.error('Role mismatch! Expected recycler but got:', profileData.profile.role);
+              setError('Failed to set recycler role. Please contact support.');
+              setLoading(false);
+              return;
+            }
+            
+            console.log('✅ Registration complete! Authentication and profile both created successfully.');
+            console.log('   - User ID:', data.user.id);
+            console.log('   - Role in profiles table:', profileData.profile.role);
+            
+            // Registration successful - redirect to login page
+            setMessage('Successfully registered account! Redirecting to login page...')
+            setTimeout(() => {
+              router.push('/login')
+            }, 2000)
+          } else {
+            console.error('Profile created but role is missing');
+            setError('Profile created but role verification failed. Please contact support.');
+            setLoading(false);
+            return;
+          }
+      } catch (profileError) {
+        console.error('Profile creation error:', profileError);
+        setError('Failed to create profile. Please try again or contact support.');
+        setLoading(false);
+        return;
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.message || 'Unexpected error.')
     } finally {
       setLoading(false)
@@ -134,15 +207,53 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {message && (
+            <div className="auth-success">
+              <span className="success-icon">✅</span>
+              <span>{message}</span>
+            </div>
+          )}
+
           <form onSubmit={handleRegister} className="auth-form">
+            {/* Role Selection */}
             <div className="form-group">
-              <label htmlFor="name">Full name</label>
+              <label>I am registering as:</label>
+              <div className="role-selection">
+                <label className="role-option">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="recycler"
+                    checked={role === 'recycler'}
+                    onChange={(e) => setRole(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span>Recycler (Normal User)</span>
+                </label>
+                <label className="role-option">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="centre_staff"
+                    checked={role === 'centre_staff'}
+                    onChange={(e) => setRole(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span>Collection Centre</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="name">
+                {role === 'centre_staff' ? 'Collection Centre Name' : 'Full name'}
+              </label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your full name"
+                placeholder={role === 'centre_staff' ? 'Enter your collection centre name' : 'Your full name'}
                 disabled={loading}
                 className="form-input"
               />
@@ -152,11 +263,10 @@ export default function RegisterPage() {
               <label htmlFor="email">Email address</label>
               <input
                 id="email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                required
                 disabled={loading}
                 className="form-input"
               />
@@ -202,10 +312,6 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-options">
-              <label className="checkbox-label">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
               <button
                 type="button"
                 className="forgot-link"
@@ -258,7 +364,6 @@ export default function RegisterPage() {
                 Sign in
               </Link>
             </p>
-            {message && <p style={{color:'green', marginTop:8}}>{message}</p>}
           </div>
         </div>
       </div>

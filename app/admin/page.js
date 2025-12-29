@@ -48,15 +48,7 @@ export default function DashboardPage() {
     // Export Modal State
     const [showExportModal, setShowExportModal] = useState(false);
 
-    useEffect(() => {
-        loadTopStats();
-    }, []);
-
-    useEffect(() => {
-        loadAnalytics();
-    }, [loadAnalytics]);
-
-    async function loadTopStats() {
+    const loadTopStats = async () => {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -73,7 +65,11 @@ export default function DashboardPage() {
             items: txCount || 0,
             newUsers: newUserCount || 0
         });
-    }
+    };
+
+    useEffect(() => {
+        loadTopStats();
+    }, []);
 
     const loadAnalytics = useCallback(async () => {
         setLoadingAnalytics(true);
@@ -89,6 +85,10 @@ export default function DashboardPage() {
             setLoadingAnalytics(false);
         }
     }, [timeRange]);
+
+    useEffect(() => {
+        loadAnalytics();
+    }, [loadAnalytics]);
 
     // --- Report Generation Logic ---
 

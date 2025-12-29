@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { checkAdminAuth } from '@/lib/admin-auth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function GET(request) {
     try {
+        // Check admin authentication
+        const { isAdmin, error: authError } = await checkAdminAuth(request);
+        if (!isAdmin) {
+            return NextResponse.json({ error: authError || 'Unauthorized' }, { status: 403 });
+        }
+
         const { searchParams } = new URL(request.url);
         const roleFilter = searchParams.get('role'); // Optional role filter
 
@@ -22,10 +29,10 @@ export async function GET(request) {
         // 2. Fetch all auth users (to get emails)
         // Note: listUsers defaults to 50 users per page. For production, you'd need pagination loop.
         // Assuming < 1000 users for now.
-        const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
+        const { data: { users }, error: listUsersError } = await supabase.auth.admin.listUsers({
             perPage: 1000
         });
-        if (authError) throw authError;
+        if (listUsersError) throw listUsersError;
 
         // 3. Merge Data
         const enrichedUsers = profiles.map(profile => {

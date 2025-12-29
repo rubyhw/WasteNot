@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import {
     Users,
@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         loadAnalytics();
-    }, [timeRange]);
+    }, [loadAnalytics]);
 
     async function loadTopStats() {
         const sevenDaysAgo = new Date();
@@ -75,7 +75,7 @@ export default function DashboardPage() {
         });
     }
 
-    async function loadAnalytics() {
+    const loadAnalytics = useCallback(async () => {
         setLoadingAnalytics(true);
         try {
             const res = await fetch(`/api/admin/analytics?range=${timeRange}`);
@@ -88,7 +88,7 @@ export default function DashboardPage() {
         } finally {
             setLoadingAnalytics(false);
         }
-    }
+    }, [timeRange]);
 
     // --- Report Generation Logic ---
 

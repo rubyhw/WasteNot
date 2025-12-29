@@ -533,8 +533,12 @@ export default function Home() {
               WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
             </p>
             <div className="actions">
-              <button className="btn primary">Get started</button>
-              <button className="btn ghost">See how it works</button>
+              <Link href="/register">
+                <button className="btn primary">Get started</button>
+              </Link>
+              <Link href="/learn-more">
+                <button className="btn ghost">See how it works</button>
+              </Link>
             </div>
           </div>
 
@@ -588,8 +592,12 @@ export default function Home() {
               </p>
             </div>
             <div className="cta-actions">
-              <button className="btn primary">Create account</button>
-              <button className="btn ghost">Learn more</button>
+              <Link href="/register">
+                <button className="btn primary">Create account</button>
+              </Link>
+              <Link href="/learn-more">
+                <button className="btn ghost">Learn more</button>
+              </Link>
             </div>
           </section>
 

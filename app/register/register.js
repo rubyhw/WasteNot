@@ -122,10 +122,13 @@ export default function RegisterPage() {
             console.log('   - User ID:', data.user.id);
             console.log('   - Role in profiles table:', profileData.profile.role);
             
-            // Registration successful - redirect to login page
-            setMessage('Successfully registered account! Redirecting to login page...')
+            // Registration successful - user is automatically logged in
+            // Show success message and redirect to home page
+            setMessage('Account successfully created!')
+            
+            // Wait for auth context to update, then redirect
             setTimeout(() => {
-              router.push('/login')
+              router.push('/')
             }, 2000)
           } else {
             console.error('Profile created but role is missing');

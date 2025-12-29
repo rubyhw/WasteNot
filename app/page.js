@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
 import { supabase } from '@/lib/supabase';
@@ -44,14 +44,24 @@ const stats = [
 
 export default function Home() {
   const router = useRouter();
-  const { isCentreStaff, user, loading: authLoading } = useAuth();
+  const { isCentreStaff, user, profile, loading: authLoading } = useAuth();
   const [memberCode, setMemberCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [recyclerProfile, setRecyclerProfile] = useState(null);
   
-  // Show general content only if not logged in or not centre_staff
-  const showGeneralContent = !authLoading && (!user || !isCentreStaff);
+  // Recycler stats state
+  const [recyclerStats, setRecyclerStats] = useState({
+    totalRecycled: 0,
+    totalPoints: 0,
+    visits: 0,
+    transactions: []
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Determine what content to show
+  const isRecycler = !authLoading && user && !isCentreStaff;
+  const showGeneralContent = !authLoading && !user;
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -98,8 +108,165 @@ export default function Home() {
     }
   };
 
+  // Fetch recycler stats
+  const fetchRecyclerStats = useCallback(async () => {
+    if (!user || isCentreStaff) return;
+    
+    try {
+      setLoadingStats(true);
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('recycler_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (transactionsError) {
+        console.error('Error fetching transactions:', transactionsError);
+      } else {
+        const transactions = transactionsData || [];
+        const totalRecycled = transactions.reduce((total, transaction) => {
+          return total + RECYCLABLE_ITEMS.reduce((itemTotal, item) => {
+            return itemTotal + (transaction[item.id] || 0);
+          }, 0);
+        }, 0);
+        const totalPoints = transactions.reduce((total, transaction) => {
+          return total + (transaction.points_earned || 0);
+        }, 0);
+
+        setRecyclerStats({
+          totalRecycled,
+          totalPoints,
+          visits: transactions.length,
+          transactions: transactions.slice(0, 3) // Recent 3 transactions
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching recycler stats:', err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [user, isCentreStaff]);
+
+  useEffect(() => {
+    if (isRecycler) {
+      fetchRecyclerStats();
+    }
+  }, [isRecycler, fetchRecyclerStats]);
+
   return (
     <main className="page">
+      {/* Recycler Dashboard - Only for Recyclers */}
+      {isRecycler && (
+        <section className="recycler-dashboard">
+          <div className="page-header">
+            <div className="badge">Welcome back</div>
+            <h1>Hello, {profile?.full_name || user?.email}!</h1>
+            <p className="lede">Track your recycling progress and manage your account</p>
+          </div>
+
+          <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+            {/* Member ID Card */}
+            <div className="member-id-card" style={{ padding: '24px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '24px' }}>🆔</div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Member ID</h3>
+              </div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--primary)', marginBottom: '8px', fontFamily: 'monospace' }}>
+                {profile?.public_id || 'Loading...'}
+              </div>
+              <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)' }}>
+                Show this ID at collection centres
+              </p>
+              <button
+                className="btn secondary small"
+                style={{ marginTop: '12px', width: '100%' }}
+                onClick={() => navigator.clipboard.writeText(profile?.public_id || '')}
+              >
+                Copy ID
+              </button>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="stats-card" style={{ padding: '24px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '24px' }}>📊</div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Quick Stats</h3>
+              </div>
+              {loadingStats ? (
+                <p style={{ color: 'var(--muted)' }}>Loading stats...</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
+                      {recyclerStats.totalRecycled}
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Items Recycled</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
+                      {recyclerStats.totalPoints}
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Points Earned</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
+                      {recyclerStats.visits}
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Collection Visits</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="actions-card" style={{ padding: '24px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '24px' }}>⚡</div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Quick Actions</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <Link href="/profile">
+                  <button className="btn primary" style={{ width: '100%' }}>
+                    View Profile
+                  </button>
+                </Link>
+                <Link href="/profile">
+                  <button className="btn secondary" style={{ width: '100%' }}>
+                    View History
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Accepted Items */}
+          <section className="accepted-section">
+            <h2>Recyclable Items Accepted</h2>
+            <p className="lede">
+              WasteNot accepts five types of recyclable items at our collection centres:
+            </p>
+            <div className="accepted-grid">
+              {RECYCLABLE_ITEMS.map((item) => (
+                <div key={item.id} className="accepted-card">
+                  <div className="accepted-icon">
+                    <Image
+                      src={item.icon}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      style={{ objectFit: 'contain' }}
+                    />
+                  </div>
+                  <div className="accepted-info">
+                    <h3>{item.name}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </section>
+      )}
+
       {/* Find Recycler Section - Only for Centre Staff */}
       {!authLoading && isCentreStaff && (
         <section className="find-recycler-section">
@@ -155,7 +322,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* General Home Page Content - Only for non-logged-in users or non-centre_staff */}
+      {/* General Home Page Content - Only for non-logged-in users */}
       {showGeneralContent && (
         <>
       <div className="hero">

@@ -9,19 +9,19 @@ import { useAuth } from '../contexts';
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { user, profile, signOut, isCentreStaff, loading } = useAuth();
+  const { user, profile, signOut, isCentreStaff, role, loading } = useAuth();
 
   // Base navigation items
   const baseNavItems = [
-    { label: 'Home', href: '/' },
+    { label: 'Home', href: role === 'admin' ? '/admin' : '/' },
   ];
 
   // Only show Transaction and Report for centre_staff
   const centreStaffNavItems = isCentreStaff
     ? [
-        { label: 'Transaction', href: '/transactions' },
-        { label: 'Report', href: '/reports' },
-      ]
+      { label: 'Transaction', href: '/transactions' },
+      { label: 'Report', href: '/reports' },
+    ]
     : [];
 
   // Show Profile for regular authenticated users
@@ -46,7 +46,7 @@ export default function Header() {
           />
           <span className="logo-text">WasteNot</span>
         </div>
-        
+
         <nav className="header-nav">
           {/* Desktop Navigation */}
           <div className="desktop-nav">
@@ -56,9 +56,9 @@ export default function Header() {
               </Link>
             ))}
           </div>
-          
+
           {/* Mobile Hamburger Menu */}
-          <button 
+          <button
             className="menu-toggle"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
@@ -67,13 +67,13 @@ export default function Header() {
             <span className="hamburger-line"></span>
             <span className="hamburger-line"></span>
           </button>
-          
+
           {/* Mobile Dropdown Menu */}
           <div className={`dropdown-menu ${isMenuOpen ? 'open' : ''}`}>
             {navItems.map((item) => (
-              <Link 
-                key={item.label} 
-                href={item.href} 
+              <Link
+                key={item.label}
+                href={item.href}
                 className="dropdown-item"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -81,7 +81,7 @@ export default function Header() {
               </Link>
             ))}
           </div>
-          
+
           <div className="header-actions">
             {!loading && user ? (
               <>

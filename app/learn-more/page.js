@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect, useRef } from 'react';
 import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 
 const recyclingGuides = [
@@ -73,43 +74,204 @@ const environmentalFacts = [
 const collectionCenters = [
   {
     id: 1,
-    name: "Downtown Recycling Center",
-    address: "123 Main St, Downtown",
+    name: "George Town Recycling Center",
+    address: "Jalan Penang, George Town, 10200 Penang",
     distance: "0.8 km",
     hours: "Mon-Fri: 8AM-6PM",
-    phone: "(555) 123-4567",
-    coordinates: { lat: 40.7128, lng: -74.0060 }
+    phone: "+604-261-1234",
+    coordinates: { lat: 5.4141, lng: 100.3288 }
   },
   {
     id: 2,
-    name: "Green Valley Collection Point",
-    address: "456 Oak Ave, Green Valley",
+    name: "Bayan Lepas Eco Collection Point",
+    address: "Jalan Bayan Lepas, Bayan Lepas, 11900 Penang",
     distance: "1.2 km",
     hours: "Mon-Sat: 9AM-5PM",
-    phone: "(555) 234-5678",
-    coordinates: { lat: 40.7589, lng: -73.9851 }
+    phone: "+604-642-5678",
+    coordinates: { lat: 5.2897, lng: 100.2631 }
   },
   {
     id: 3,
-    name: "EcoHub Central",
-    address: "789 Pine Rd, Central District",
+    name: "Butterworth Green Hub",
+    address: "Jalan Bagan Luar, Butterworth, 12000 Penang",
     distance: "2.1 km",
     hours: "Tue-Sun: 10AM-4PM",
-    phone: "(555) 345-6789",
-    coordinates: { lat: 40.7505, lng: -73.9934 }
+    phone: "+604-331-9012",
+    coordinates: { lat: 5.4380, lng: 100.3885 }
   },
   {
     id: 4,
-    name: "Sustainable Solutions Depot",
-    address: "321 Elm St, Riverside",
+    name: "Jelutong Sustainable Solutions",
+    address: "Jalan Jelutong, Jelutong, 11600 Penang",
     distance: "2.8 km",
     hours: "Mon-Fri: 7AM-7PM",
-    phone: "(555) 456-7890",
-    coordinates: { lat: 40.7282, lng: -73.7949 }
+    phone: "+604-456-7890",
+    coordinates: { lat: 5.3971, lng: 100.3188 }
   }
 ];
 
+function MapComponent({ centers, selectedCenter, onCenterSelect }) {
+  const mapRef = useRef(null);
+  const googleMapRef = useRef(null);
+  const markersRef = useRef([]);
+  const infoWindowsRef = useRef([]);
+
+  useEffect(() => {
+    // Load Google Maps script if not already loaded
+    if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+
+      script.onload = () => {
+        initMap();
+      };
+    } else if (window.google) {
+      initMap();
+    }
+
+    function initMap() {
+      if (!mapRef.current || !window.google) return;
+
+      // Center on Penang, Malaysia
+      const penangCenter = { lat: 5.4141, lng: 100.3288 };
+
+      const map = new window.google.maps.Map(mapRef.current, {
+        zoom: 11,
+        center: penangCenter,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }]
+          }
+        ]
+      });
+
+      googleMapRef.current = map;
+
+      // Clear existing markers and info windows
+      markersRef.current.forEach(marker => marker.setMap(null));
+      infoWindowsRef.current.forEach(infoWindow => infoWindow.close());
+      markersRef.current = [];
+      infoWindowsRef.current = [];
+
+      // Add markers for each center
+      centers.forEach((center, index) => {
+        const marker = new window.google.maps.Marker({
+          position: center.coordinates,
+          map: map,
+          title: center.name,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20" cy="20" r="18" fill="#10B981" stroke="white" stroke-width="3"/>
+                <text x="20" y="25" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">${index + 1}</text>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(40, 40),
+            anchor: new window.google.maps.Point(20, 40)
+          }
+        });
+
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: `
+            <div style="max-width: 250px; font-family: system-ui, -apple-system, sans-serif;">
+              <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 16px; font-weight: 600;">${center.name}</h3>
+              <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">📍 ${center.address}</p>
+              <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">🕒 ${center.hours}</p>
+              <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">📞 ${center.phone}</p>
+              <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${center.coordinates.lat},${center.coordinates.lng}', '_blank')"
+                      style="background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                Get Directions
+              </button>
+            </div>
+          `
+        });
+
+        marker.addListener('click', () => {
+          // Close other info windows
+          infoWindowsRef.current.forEach(iw => iw.close());
+          // Open this info window
+          infoWindow.open(map, marker);
+          // Call the select callback
+          onCenterSelect(center);
+        });
+
+        markersRef.current.push(marker);
+        infoWindowsRef.current.push(infoWindow);
+      });
+
+      // Fit map to show all markers
+      if (centers.length > 0) {
+        const bounds = new window.google.maps.LatLngBounds();
+        centers.forEach(center => {
+          bounds.extend(center.coordinates);
+        });
+        map.fitBounds(bounds);
+
+        // Don't zoom in too much for single points
+        const listener = window.google.maps.event.addListener(map, 'idle', () => {
+          if (map.getZoom() > 15) map.setZoom(15);
+          window.google.maps.event.removeListener(listener);
+        });
+      }
+    }
+
+    return () => {
+      // Cleanup
+      if (markersRef.current) {
+        markersRef.current.forEach(marker => marker.setMap(null));
+      }
+      if (infoWindowsRef.current) {
+        infoWindowsRef.current.forEach(infoWindow => infoWindow.close());
+      }
+    };
+  }, [centers, onCenterSelect]);
+
+  // Highlight selected center
+  useEffect(() => {
+    if (selectedCenter && markersRef.current.length > 0) {
+      const centerIndex = centers.findIndex(c => c.id === selectedCenter.id);
+      if (centerIndex !== -1 && markersRef.current[centerIndex]) {
+        // Bounce animation
+        markersRef.current[centerIndex].setAnimation(window.google?.maps?.Animation?.BOUNCE);
+        setTimeout(() => {
+          if (markersRef.current[centerIndex]) {
+            markersRef.current[centerIndex].setAnimation(null);
+          }
+        }, 2000);
+      }
+    }
+  }, [selectedCenter, centers]);
+
+  return (
+    <div className="map-container">
+      {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here' ? (
+        <div className="map-placeholder">
+          <div className="map-icon">🗺️</div>
+          <p>Interactive Map View</p>
+          <small>To enable the map, add your Google Maps API key to .env.local</small>
+          <code style={{ display: 'block', marginTop: '8px', padding: '8px', background: '#f3f4f6', borderRadius: '4px', fontSize: '12px' }}>
+            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+          </code>
+        </div>
+      ) : (
+        <div ref={mapRef} style={{ width: '100%', height: '400px', borderRadius: '12px' }} />
+      )}
+    </div>
+  );
+}
+
 export default function LearnMorePage() {
+  const [selectedCenter, setSelectedCenter] = useState(null);
+
   return (
     <main className="page">
       {/* Page Header */}
@@ -199,40 +361,25 @@ export default function LearnMorePage() {
         </p>
 
         <div className="locator-container">
-          {/* Mock Map */}
-          <div className="map-container">
-            <div className="mock-map">
-              <div className="map-placeholder">
-                <div className="map-icon">🗺️</div>
-                <p>Interactive Map View</p>
-                <small>Collection centres shown as markers</small>
-              </div>
-
-              {/* Mock markers */}
-              {collectionCenters.map((center) => (
-                <div
-                  key={center.id}
-                  className="map-marker"
-                  style={{
-                    left: `${20 + (center.id - 1) * 25}%`,
-                    top: `${20 + (center.id - 1) * 20}%`
-                  }}
-                  title={center.name}
-                >
-                  📍
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Interactive Map */}
+          <MapComponent
+            centers={collectionCenters}
+            selectedCenter={selectedCenter}
+            onCenterSelect={setSelectedCenter}
+          />
 
           {/* Centres List */}
           <div className="centres-list">
             <h3>Nearby Collection Centres</h3>
             <div className="centres-grid">
               {collectionCenters.map((center) => (
-                <div key={center.id} className="centre-card">
+                <div
+                  key={center.id}
+                  className={`centre-card ${selectedCenter?.id === center.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedCenter(center)}
+                >
                   <div className="centre-header">
-                    <div className="centre-icon">🏭</div>
+                    <div className="centre-icon">{center.id}</div>
                     <div className="centre-info">
                       <h4>{center.name}</h4>
                       <p className="centre-address">{center.address}</p>
@@ -249,7 +396,15 @@ export default function LearnMorePage() {
                       <span>{center.phone}</span>
                     </div>
                   </div>
-                  <button className="btn primary small">Get Directions</button>
+                  <button
+                    className="btn primary small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${center.coordinates.lat},${center.coordinates.lng}`, '_blank');
+                    }}
+                  >
+                    Get Directions
+                  </button>
                 </div>
               ))}
             </div>

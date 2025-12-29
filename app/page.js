@@ -8,6 +8,46 @@ import { useAuth } from './contexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from './config/recyclableItems';
 
+// Collection centers data
+const collectionCenters = [
+  {
+    id: 1,
+    name: "George Town Recycling Center",
+    address: "Jalan Penang, George Town, 10200 Penang",
+    distance: "0.8 km",
+    hours: "Mon-Fri: 8AM-6PM",
+    phone: "+604-261-1234",
+    coordinates: { lat: 5.4141, lng: 100.3288 }
+  },
+  {
+    id: 2,
+    name: "Bayan Lepas Eco Collection Point",
+    address: "Jalan Bayan Lepas, Bayan Lepas, 11900 Penang",
+    distance: "1.2 km",
+    hours: "Mon-Sat: 9AM-5PM",
+    phone: "+604-642-5678",
+    coordinates: { lat: 5.2897, lng: 100.2631 }
+  },
+  {
+    id: 3,
+    name: "Butterworth Green Hub",
+    address: "Jalan Bagan Luar, Butterworth, 12000 Penang",
+    distance: "2.1 km",
+    hours: "Tue-Sun: 10AM-4PM",
+    phone: "+604-331-9012",
+    coordinates: { lat: 5.4380, lng: 100.3885 }
+  },
+  {
+    id: 4,
+    name: "Jelutong Sustainable Solutions",
+    address: "Jalan Jelutong, Jelutong, 11600 Penang",
+    distance: "2.8 km",
+    hours: "Mon-Fri: 7AM-7PM",
+    phone: "+604-281-3456",
+    coordinates: { lat: 5.3971, lng: 100.3188 }
+  }
+];
+
 const steps = [
   {
     label: "Register an Account",
@@ -58,6 +98,13 @@ export default function Home() {
     transactions: []
   });
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Collection centers state
+  const [userLocation, setUserLocation] = useState(null);
+  const [nearestCenters, setNearestCenters] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [showCenters, setShowCenters] = useState(false);
   
   // Determine what content to show
   const isRecycler = !authLoading && user && !isCentreStaff;
@@ -147,6 +194,98 @@ export default function Home() {
     }
   }, [user, isCentreStaff]);
 
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Get user's location and find nearest collection centers
+  const findNearestCenters = useCallback(async () => {
+    setLocationLoading(true);
+    setLocationError(null);
+    setShowCenters(true); // Show centers immediately
+
+    // Show centers with default distances first
+    const defaultCoords = { lat: 5.4141, lng: 100.3288 }; // George Town, Penang
+    const centersWithDistance = collectionCenters.map(center => ({
+      ...center,
+      actualDistance: calculateDistance(
+        defaultCoords.lat,
+        defaultCoords.lng,
+        center.coordinates.lat,
+        center.coordinates.lng
+      )
+    }));
+
+    const nearest = centersWithDistance
+      .sort((a, b) => a.actualDistance - b.actualDistance)
+      .slice(0, 3)
+      .map(center => ({
+        ...center,
+        distance: `${center.actualDistance.toFixed(1)} km`
+      }));
+
+    setNearestCenters(nearest);
+
+    try {
+      if (!navigator.geolocation) {
+        setLocationError('Geolocation is not supported by this browser. Showing centers with default location.');
+        setLocationLoading(false);
+        return;
+      }
+
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        });
+      });
+
+      const userCoords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      setUserLocation(userCoords);
+
+      // Recalculate with actual user location
+      const centersWithActualDistance = collectionCenters.map(center => ({
+        ...center,
+        actualDistance: calculateDistance(
+          userCoords.lat,
+          userCoords.lng,
+          center.coordinates.lat,
+          center.coordinates.lng
+        )
+      }));
+
+      // Sort by distance and take top 3
+      const nearestWithActual = centersWithActualDistance
+        .sort((a, b) => a.actualDistance - b.actualDistance)
+        .slice(0, 3)
+        .map(center => ({
+          ...center,
+          distance: `${center.actualDistance.toFixed(1)} km`
+        }));
+
+      setNearestCenters(nearestWithActual);
+      setLocationError(null); // Clear any previous error
+    } catch (err) {
+      setLocationError('Using default location (Penang). Please enable location permissions for accurate results.');
+    } finally {
+      setLocationLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isRecycler) {
       fetchRecyclerStats();
@@ -230,9 +369,66 @@ export default function Home() {
                     View Profile
                   </button>
                 </Link>
+                <button
+                  className="btn secondary"
+                  style={{ width: '100%' }}
+                  onClick={findNearestCenters}
+                  disabled={locationLoading}
+                >
+                  {locationLoading ? 'Finding...' : '📍 Find Collection Centres'}
+                </button>
               </div>
             </div>
           </div>
+
+          {/* Nearest Collection Centers */}
+          {showCenters && (
+            <section className="centers-section" style={{ marginBottom: '32px' }}>
+              <h2>Nearest Collection Centres</h2>
+              {locationError && (
+                <div className="auth-error" style={{ marginBottom: '16px' }}>
+                  <span className="error-icon">⚠️</span>
+                  <span>{locationError}</span>
+                </div>
+              )}
+              <div className="centers-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+                {nearestCenters.map((center) => (
+                  <div key={center.id} className="center-card" style={{ padding: '20px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '24px' }}>🏭</div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{center.name}</h3>
+                        <div style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 500 }}>{center.distance} away</div>
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '4px' }}>📍 {center.address}</div>
+                      <div style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '4px' }}>🕒 {center.hours}</div>
+                      <div style={{ fontSize: '14px', color: 'var(--muted)' }}>📞 {center.phone}</div>
+                    </div>
+                    <button
+                      className="btn secondary small"
+                      style={{ width: '100%' }}
+                      onClick={() => {
+                        const url = `https://www.google.com/maps/dir/?api=1&destination=${center.coordinates.lat},${center.coordinates.lng}`;
+                        window.open(url, '_blank');
+                      }}
+                    >
+                      Get Directions
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                <button
+                  className="btn ghost small"
+                  onClick={() => setShowCenters(false)}
+                >
+                  Hide Centres
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* Accepted Items */}
           <section className="accepted-section">

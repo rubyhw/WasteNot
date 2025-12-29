@@ -3249,6 +3249,17 @@ img {
   box-shadow: 0 8px 25px rgba(26, 111, 60, 0.15);
 }
 
+.centre-card.selected {
+  border-color: var(--primary);
+  background: rgba(35, 164, 85, 0.05);
+  box-shadow: 0 0 0 2px rgba(35, 164, 85, 0.2);
+}
+
+.centre-card.selected .centre-icon {
+  background: var(--primary);
+  color: white;
+}
+
 .centre-header {
   display: flex;
   gap: 12px;
@@ -3256,7 +3267,7 @@ img {
 }
 
 .centre-icon {
-  font-size: 24px;
+  font-size: 18px;
   width: 40px;
   height: 40px;
   display: flex;
@@ -3265,6 +3276,13 @@ img {
   background: rgba(35, 164, 85, 0.1);
   border-radius: 8px;
   flex-shrink: 0;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.centre-card.selected .centre-icon {
+  background: var(--primary);
+  color: white;
 }
 
 .centre-info h4 {

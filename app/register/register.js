@@ -261,7 +261,7 @@ export default function RegisterPage() {
               <label htmlFor="confirm">Confirm password</label>
               <input
                 id="confirm"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="Confirm password"

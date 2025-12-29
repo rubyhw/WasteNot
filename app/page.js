@@ -230,11 +230,6 @@ export default function Home() {
                     View Profile
                   </button>
                 </Link>
-                <Link href="/profile">
-                  <button className="btn secondary" style={{ width: '100%' }}>
-                    View History
-                  </button>
-                </Link>
               </div>
             </div>
           </div>

@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '../contexts';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { user, profile, signOut, isCentreStaff, loading } = useAuth();
 
   // Base navigation items
@@ -98,7 +100,9 @@ export default function Header() {
             ) : (
               <>
                 <Link href="/login" className="btn-login">Login</Link>
-                <Link href="/register" className="btn-register">Register</Link>
+                {pathname !== '/register' && (
+                  <Link href="/register" className="btn-register">Register</Link>
+                )}
               </>
             )}
           </div>

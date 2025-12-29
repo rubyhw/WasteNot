@@ -17,13 +17,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState('recycler')
 
-  // Password reset UI state (keeps previous reset feature)
-  const [showReset, setShowReset] = useState(false)
-  const [resetEmail, setResetEmail] = useState('')
-  const [resetLoading, setResetLoading] = useState(false)
-  const [resetError, setResetError] = useState(null)
-  const [resetMessage, setResetMessage] = useState(null)
-
   async function handleRegister(e) {
     e.preventDefault()
     setError(null)
@@ -154,42 +147,6 @@ export default function RegisterPage() {
     }
   }
 
-  async function handleReset(e) {
-    e.preventDefault()
-    setResetError(null)
-    setResetMessage(null)
-
-    if (!resetEmail) {
-      setResetError('Please enter your email.')
-      return
-    }
-
-    setResetLoading(true)
-    try {
-      let res, err
-      if (supabase.auth && typeof supabase.auth.resetPasswordForEmail === 'function') {
-        ({ data: res, error: err } = await supabase.auth.resetPasswordForEmail(resetEmail))
-      } else if (supabase.auth && supabase.auth.api && typeof supabase.auth.api.resetPasswordForEmail === 'function') {
-        ({ data: res, error: err } = await supabase.auth.api.resetPasswordForEmail(resetEmail))
-      } else {
-        throw new Error('Password reset not supported by this Supabase client version.')
-      }
-
-      if (err) {
-        setResetError(err.message || 'Failed to send reset email.')
-      } else {
-        setResetMessage('If an account exists, a password reset email was sent.')
-        setTimeout(() => {
-          setShowReset(false)
-          setResetEmail('')
-        }, 1500)
-      }
-    } catch (err) {
-      setResetError(err.message || 'Unexpected error.')
-    } finally {
-      setResetLoading(false)
-    }
-  }
 
   return (
     <main className="page">
@@ -311,16 +268,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="form-options">
-              <button
-                type="button"
-                className="forgot-link"
-                onClick={() => { setShowReset(s => !s); setResetError(null); setResetMessage(null); }}
-              >
-                Forgot password?
-              </button>
-            </div>
-
             <button type="submit" disabled={loading} className="btn primary auth-submit">
               {loading ? (
                 <>
@@ -332,30 +279,6 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
-
-          {showReset && (
-            <form onSubmit={handleReset} style={{marginTop:12, borderTop:'1px solid #eee', paddingTop:12}}>
-              <h3>Reset password</h3>
-              <div className="form-group">
-                <label htmlFor="resetEmail">Email</label>
-                <input
-                  id="resetEmail"
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="form-input"
-                />
-              </div>
-              <div style={{marginTop:8}}>
-                <button type="submit" disabled={resetLoading} className="btn">
-                  {resetLoading ? 'Sending…' : 'Send reset email'}
-                </button>
-              </div>
-              {resetError && <p style={{color:'red', marginTop:8}}>{resetError}</p>}
-              {resetMessage && <p style={{color:'green', marginTop:8}}>{resetMessage}</p>}
-            </form>
-          )}
 
           <div className="auth-footer">
             <p>

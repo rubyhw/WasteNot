@@ -83,6 +83,37 @@ export default function ProfilePage() {
     }
   }, [user, authLoading, router, fetchUserData]);
 
+  // Generate public_id if missing
+  useEffect(() => {
+    if (profile && !profile.public_id && user) {
+      generatePublicId();
+    }
+  }, [profile, user]);
+
+  const generatePublicId = async () => {
+    try {
+      const response = await fetch('/api/auth/create-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          fullName: profile.full_name || '',
+          email: user.email || '',
+          role: profile.role || 'recycler'
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh the page or reload profile
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error generating public_id:', error);
+    }
+  };
+
   const handleUpdateProfile = async () => {
     try {
       setUpdating(true);

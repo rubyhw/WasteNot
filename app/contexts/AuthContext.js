@@ -57,15 +57,91 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('Error fetching profile:', error);
-        setProfile(null);
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') { // No rows returned
+          await createProfileIfMissing(userId);
+        } else {
+          setProfile(null);
+        }
       } else {
-        setProfile(data);
+        // Check if public_id is missing and generate it via API
+        if (!data.public_id) {
+          await generatePublicId(data);
+        } else {
+          setProfile(data);
+        }
       }
     } catch (err) {
       console.error('Error fetching profile:', err);
       setProfile(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generatePublicId = async (profileData) => {
+    try {
+      // Call the create-profile API to generate public_id
+      const response = await fetch('/api/auth/create-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: profileData.id,
+          fullName: profileData.full_name || '',
+          email: '', // Not needed for update
+          role: profileData.role || 'recycler'
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.profile) {
+        setProfile(result.profile);
+      } else {
+        console.error('Failed to generate public_id:', result.error);
+        setProfile(profileData); // Set profile anyway
+      }
+    } catch (err) {
+      console.error('Error generating public_id:', err);
+      setProfile(profileData);
+    }
+  };
+
+  const createProfileIfMissing = async (userId) => {
+    try {
+      // Get user metadata
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const user = userData.user;
+      const fullName = user.user_metadata?.full_name || '';
+      const email = user.email || '';
+
+      // Create profile via API
+      const response = await fetch('/api/auth/create-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          fullName,
+          email,
+          role: 'recycler' // Default role
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.profile) {
+        setProfile(result.profile);
+      } else {
+        console.error('Failed to create profile:', result.error);
+        setProfile(null);
+      }
+    } catch (err) {
+      console.error('Error creating profile:', err);
+      setProfile(null);
     }
   };
 

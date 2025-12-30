@@ -32,13 +32,68 @@ export async function POST(request) {
 
     if (existingProfile) {
       console.log('Profile already exists for user:', userId);
-      // Return existing profile instead of error
-      const { data: profile } = await supabase
+      // Check if public_id is missing and generate it
+      const { data: profile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
-      
+
+      if (fetchError) {
+        console.error('Error fetching existing profile:', fetchError);
+        return NextResponse.json(
+          { error: 'Failed to fetch profile' },
+          { status: 500 }
+        );
+      }
+
+      if (!profile.public_id) {
+        // Generate public_id
+        let newPublicId;
+        let attempts = 0;
+        const maxAttempts = 10;
+
+        do {
+          newPublicId = Math.random().toString(36).substring(2, 8).toUpperCase();
+          attempts++;
+          const { data: existing } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('public_id', newPublicId)
+            .single();
+          if (existing) continue;
+          break;
+        } while (attempts < maxAttempts);
+
+        if (attempts >= maxAttempts) {
+          newPublicId = (Date.now() % 1000000).toString(36).toUpperCase().padStart(6, '0');
+        }
+
+        // Update the profile
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('profiles')
+          .update({ public_id: newPublicId })
+          .eq('id', userId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error updating public_id:', updateError);
+          // Return profile anyway
+          return NextResponse.json({
+            success: true,
+            profile: profile,
+            message: 'Profile exists but public_id update failed'
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          profile: updatedProfile,
+          message: 'Profile updated with public_id'
+        });
+      }
+
       return NextResponse.json({
         success: true,
         profile: profile,

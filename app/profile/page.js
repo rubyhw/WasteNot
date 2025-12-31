@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts';
+import { useLanguage } from '../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 import Image from 'next/image';
@@ -10,6 +11,10 @@ import Image from 'next/image';
 export default function ProfilePage() {
   const router = useRouter();
   const { user, profile, loading: authLoading, signOut } = useAuth();
+  const languageContext = useLanguage();
+  const language = languageContext?.language || 'en';
+  const switchLanguage = languageContext?.switchLanguage || (() => {});
+  const t = languageContext?.t || ((key) => key);
   const [activeTab, setActiveTab] = useState('overview');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,10 +30,17 @@ export default function ProfilePage() {
   // Settings state
   const [settings, setSettings] = useState({
     emailNotifications: true,
-    smsNotifications: false,
     darkMode: false,
-    language: 'en'
+    language: language || 'en'
   });
+
+  // Sync settings language with context language
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      language: language
+    }));
+  }, [language]);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -141,11 +153,70 @@ export default function ProfilePage() {
   };
 
   const handleSettingsChange = (setting, value) => {
+    if (setting === 'language') {
+      switchLanguage(value);
+    }
     setSettings(prev => ({
       ...prev,
       [setting]: value
     }));
     // In a real app, you'd save this to the database
+  };
+
+  const exportUserData = () => {
+    try {
+      // Prepare user profile data
+      const profileData = {
+        'User ID': profile?.id || 'N/A',
+        'Full Name': profile?.full_name || 'N/A',
+        'Email': user?.email || 'N/A',
+        'Phone': profile?.phone || 'N/A',
+        'Address': profile?.address || 'N/A',
+        'Role': profile?.role || 'N/A',
+        'Member Since': profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A',
+        'Total Transactions': transactions.length,
+        'Settings': JSON.stringify(settings)
+      };
+
+      // Create CSV content with profile data
+      const headers = Object.keys(profileData);
+      const profileValues = Object.values(profileData).map(v => 
+        typeof v === 'string' && (v.includes(',') || v.includes('"') || v.includes('\n'))
+          ? `"${v.replace(/"/g, '""')}"` 
+          : v
+      );
+      
+      let csvContent = headers.join(',') + '\n' + profileValues.join(',') + '\n\n';
+
+      // Add transactions section
+      if (transactions.length > 0) {
+        csvContent += 'TRANSACTION HISTORY\n';
+        const txHeaders = ['Date', 'Type', 'Amount', 'Status'];
+        csvContent += txHeaders.join(',') + '\n';
+        
+        transactions.forEach(tx => {
+          const date = new Date(tx.created_at).toLocaleDateString();
+          const type = tx.type || 'N/A';
+          const amount = tx.amount || 'N/A';
+          const status = tx.status || 'N/A';
+          csvContent += `${date},${type},${amount},${status}\n`;
+        });
+      }
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `wastenot_user_data_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Failed to export data. Please try again.');
+    }
   };
 
   const getTotalRecycled = () => {
@@ -184,7 +255,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="page">
+    <main className="page" key={language}>
       <div className="page-header">
         <div className="badge">My Account</div>
         <h1>User Profile & History</h1>
@@ -199,7 +270,7 @@ export default function ProfilePage() {
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
-          Overview
+          {t('profile.overview')}
         </button>
         <button
           className={`tab-button ${activeTab === 'personal' ? 'active' : ''}`}
@@ -217,7 +288,7 @@ export default function ProfilePage() {
           className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
-          Settings
+          {t('profile.settings')}
         </button>
       </div>
 
@@ -501,15 +572,15 @@ export default function ProfilePage() {
             <div className="settings-card">
               <div className="card-header">
                 <div className="card-icon">⚙️</div>
-                <h3>Account Settings</h3>
+                <h3>{t('profile.accountSettings')}</h3>
               </div>
 
               <div className="settings-group">
-                <h4>Notifications</h4>
+                <h4>{t('profile.notifications')}</h4>
                 <div className="setting-item">
                   <div className="setting-info">
-                    <div className="setting-label">Email Notifications</div>
-                    <div className="setting-description">Receive updates about your recycling activity</div>
+                    <div className="setting-label">{t('profile.emailNotifications')}</div>
+                    <div className="setting-description">{t('profile.emailNotificationsDesc')}</div>
                   </div>
                   <label className="toggle">
                     <input
@@ -520,29 +591,14 @@ export default function ProfilePage() {
                     <span className="toggle-slider"></span>
                   </label>
                 </div>
-
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <div className="setting-label">SMS Notifications</div>
-                    <div className="setting-description">Get text messages for important updates</div>
-                  </div>
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={settings.smsNotifications}
-                      onChange={(e) => handleSettingsChange('smsNotifications', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
               </div>
 
               <div className="settings-group">
-                <h4>Preferences</h4>
+                <h4>{t('profile.preferences')}</h4>
                 <div className="setting-item">
                   <div className="setting-info">
-                    <div className="setting-label">Language</div>
-                    <div className="setting-description">Choose your preferred language</div>
+                    <div className="setting-label">{t('profile.language')}</div>
+                    <div className="setting-description">{t('profile.languageDesc')}</div>
                   </div>
                   <select
                     value={settings.language}
@@ -550,17 +606,17 @@ export default function ProfilePage() {
                     className="setting-select"
                   >
                     <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
+                    <option value="ms">Malay (Bahasa Melayu)</option>
+                    <option value="zh">Chinese (中文)</option>
                   </select>
                 </div>
               </div>
 
               <div className="settings-group">
-                <h4>Account Actions</h4>
+                <h4>{t('profile.accountActions')}</h4>
                 <div className="action-buttons">
-                  <button className="btn secondary">Export My Data</button>
-                  <button className="btn danger" onClick={signOut}>Sign Out</button>
+                  <button className="btn secondary" onClick={exportUserData}>{t('profile.exportData')}</button>
+                  <button className="btn danger" onClick={signOut}>{t('profile.signOut')}</button>
                 </div>
               </div>
             </div>

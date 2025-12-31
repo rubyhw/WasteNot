@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts';
 import { supabase } from '@/lib/supabase';
@@ -18,22 +18,7 @@ export default function ReportsPage() {
     new Date().getMonth() + 1
   );
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      if (!isCentreStaff) {
-        router.push('/');
-        return;
-      }
-      fetchYearData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isCentreStaff, authLoading]);
-
-  const fetchYearData = async () => {
+  const fetchYearData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -63,7 +48,23 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      if (!isCentreStaff) {
+        router.push('/');
+        return;
+      }
+      fetchYearData();
+    }
+  }, [user, isCentreStaff, authLoading, router, fetchYearData]);
+
+
 
   const summary = useMemo(() => {
     if (!transactions.length) {

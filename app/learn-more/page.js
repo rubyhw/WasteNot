@@ -120,7 +120,8 @@ function MapComponent({ centers, selectedCenter, onCenterSelect }) {
     // Load Google Maps script if not already loaded
     if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -253,7 +254,7 @@ function MapComponent({ centers, selectedCenter, onCenterSelect }) {
 
   return (
     <div className="map-container">
-      {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here' ? (
+      {(typeof window !== 'undefined' && (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here')) ? (
         <div className="map-placeholder">
           <div className="map-icon">🗺️</div>
           <p>Interactive Map View</p>

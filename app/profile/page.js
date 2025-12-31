@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const t = languageContext?.t || ((key) => key);
   const [activeTab, setActiveTab] = useState('overview');
   const [transactions, setTransactions] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -68,6 +69,19 @@ export default function ProfilePage() {
         setTransactions(transactionsData || []);
       }
 
+      // Fetch available vouchers
+      const { data: vouchersData, error: vouchersError } = await supabase
+        .from('vouchers')
+        .select('*')
+        .eq('is_active', true)
+        .order('points_cost', { ascending: true });
+
+      if (vouchersError) {
+        console.error('Error fetching vouchers:', vouchersError);
+      } else {
+        setVouchers(vouchersData || []);
+      }
+
       // Set edit data from profile
       if (profile) {
         setEditData({
@@ -95,14 +109,7 @@ export default function ProfilePage() {
     }
   }, [user, authLoading, router, fetchUserData]);
 
-  // Generate public_id if missing
-  useEffect(() => {
-    if (profile && !profile.public_id && user) {
-      generatePublicId();
-    }
-  }, [profile, user]);
-
-  const generatePublicId = async () => {
+  const generatePublicId = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/create-profile', {
         method: 'POST',
@@ -124,7 +131,14 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error generating public_id:', error);
     }
-  };
+  }, [user?.id, user?.email, profile?.full_name, profile?.role]);
+
+  // Generate public_id if missing
+  useEffect(() => {
+    if (profile && !profile.public_id && user) {
+      generatePublicId();
+    }
+  }, [profile, user, generatePublicId]);
 
   const handleUpdateProfile = async () => {
     try {
@@ -273,6 +287,12 @@ export default function ProfilePage() {
           {t('profile.overview')}
         </button>
         <button
+          className={`tab-button ${activeTab === 'vouchers' ? 'active' : ''}`}
+          onClick={() => setActiveTab('vouchers')}
+        >
+          Voucher Catalogue
+        </button>
+        <button
           className={`tab-button ${activeTab === 'personal' ? 'active' : ''}`}
           onClick={() => setActiveTab('personal')}
         >
@@ -322,13 +342,17 @@ export default function ProfilePage() {
                   <h3>Quick Stats</h3>
                 </div>
                 <div className="stats-grid">
+                  <div className="stat-item" style={{ gridColumn: 'span 3', backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '12px', border: '2px solid #86efac' }}>
+                    <div className="stat-value" style={{ fontSize: '48px', color: '#16a34a', marginBottom: '8px' }}>
+                      {getTotalPoints()}
+                    </div>
+                    <div className="stat-label" style={{ fontSize: '16px', color: '#15803d', fontWeight: '600' }}>
+                      🏆 Total Recycling Points
+                    </div>
+                  </div>
                   <div className="stat-item">
                     <div className="stat-value">{getTotalRecycled()}</div>
                     <div className="stat-label">Items Recycled</div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-value">{getTotalPoints()}</div>
-                    <div className="stat-label">Points Earned</div>
                   </div>
                   <div className="stat-item">
                     <div className="stat-value">{transactions.length}</div>
@@ -362,6 +386,153 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'vouchers' && (
+          <div className="vouchers-section">
+            <div className="vouchers-header">
+              <div>
+                <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '8px' }}>Voucher Catalogue</h2>
+                <p style={{ color: 'var(--muted)', marginBottom: '16px' }}>
+                  Redeem your recycling points for amazing rewards! You have <strong style={{ color: '#16a34a' }}>{getTotalPoints()} points</strong> available.
+                </p>
+              </div>
+            </div>
+            
+            <div className="vouchers-grid" style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+              gap: '20px',
+              marginTop: '24px'
+            }}>
+              {vouchers.length === 0 ? (
+                <div style={{ 
+                  gridColumn: '1 / -1', 
+                  textAlign: 'center', 
+                  padding: '60px 20px',
+                  color: 'var(--muted)'
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎁</div>
+                  <p style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>No vouchers available yet</p>
+                  <p>Check back later for exciting rewards!</p>
+                </div>
+              ) : (
+                vouchers.map((voucher) => {
+                  const canAfford = getTotalPoints() >= voucher.points_cost;
+                  return (
+                    <div 
+                      key={voucher.id} 
+                      className="voucher-card"
+                      style={{
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        padding: '24px',
+                        backgroundColor: canAfford ? '#ffffff' : '#f9fafb',
+                        transition: 'all 0.2s',
+                        position: 'relative',
+                        opacity: canAfford ? 1 : 0.7
+                      }}
+                    >
+                      {!canAfford && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '12px',
+                          right: '12px',
+                          backgroundColor: '#fee2e2',
+                          color: '#dc2626',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: '600'
+                        }}>
+                          Insufficient Points
+                        </div>
+                      )}
+                      
+                      <div style={{ marginBottom: '16px' }}>
+                        <div style={{
+                          width: '60px',
+                          height: '60px',
+                          borderRadius: '12px',
+                          backgroundColor: '#fef3c7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '32px',
+                          marginBottom: '16px'
+                        }}>
+                          🎟️
+                        </div>
+                        
+                        <h3 style={{ 
+                          fontSize: '20px', 
+                          fontWeight: '600', 
+                          marginBottom: '8px',
+                          color: '#1f2937'
+                        }}>
+                          {voucher.name}
+                        </h3>
+                        
+                        <p style={{ 
+                          fontSize: '14px', 
+                          color: '#6b7280',
+                          minHeight: '40px',
+                          marginBottom: '16px'
+                        }}>
+                          {voucher.description || 'Redeem this voucher for great rewards!'}
+                        </p>
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #e5e7eb'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <span style={{
+                            fontSize: '24px',
+                            fontWeight: '700',
+                            color: '#16a34a'
+                          }}>
+                            {voucher.points_cost}
+                          </span>
+                          <span style={{
+                            fontSize: '14px',
+                            color: '#6b7280',
+                            fontWeight: '500'
+                          }}>
+                            points
+                          </span>
+                        </div>
+                        
+                        <button
+                          className="btn primary small"
+                          disabled={!canAfford}
+                          style={{
+                            opacity: canAfford ? 1 : 0.5,
+                            cursor: canAfford ? 'pointer' : 'not-allowed'
+                          }}
+                          onClick={() => {
+                            if (canAfford) {
+                              alert('Voucher redemption feature coming soon! You will be able to redeem ' + voucher.name + ' for ' + voucher.points_cost + ' points.');
+                            }
+                          }}
+                        >
+                          {canAfford ? 'Redeem' : 'Locked'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}

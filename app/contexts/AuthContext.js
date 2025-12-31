@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
@@ -20,66 +20,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        // If profile doesn't exist, try to create it
-        if (error.code === 'PGRST116') { // No rows returned
-          await createProfileIfMissing(userId);
-        } else {
-          setProfile(null);
-        }
-      } else {
-        // Check if public_id is missing and generate it via API
-        if (!data.public_id) {
-          await generatePublicId(data);
-        } else {
-          setProfile(data);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generatePublicId = async (profileData) => {
+  const generatePublicId = useCallback(async (profileData) => {
     try {
       // Call the create-profile API to generate public_id
       const response = await fetch('/api/auth/create-profile', {
@@ -106,9 +47,9 @@ export function AuthProvider({ children }) {
       console.error('Error generating public_id:', err);
       setProfile(profileData);
     }
-  };
+  }, []);
 
-  const createProfileIfMissing = async (userId) => {
+  const createProfileIfMissing = useCallback(async (userId) => {
     try {
       // Get user metadata
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -143,7 +84,66 @@ export function AuthProvider({ children }) {
       console.error('Error creating profile:', err);
       setProfile(null);
     }
-  };
+  }, []);
+
+  const fetchProfile = useCallback(async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') { // No rows returned
+          await createProfileIfMissing(userId);
+        } else {
+          setProfile(null);
+        }
+      } else {
+        // Check if public_id is missing and generate it via API
+        if (!data.public_id) {
+          await generatePublicId(data);
+        } else {
+          setProfile(data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [generatePublicId, createProfileIfMissing]);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

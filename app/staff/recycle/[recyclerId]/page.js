@@ -29,6 +29,35 @@ export default function RecyclePage() {
     setQuantities(initialQuantities);
   }, []);
 
+  // Fetch recycler data
+  const fetchRecycler = useCallback(async () => {
+    if (!recyclerId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', recyclerId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      
+      if (data.role !== 'recycler') {
+        setError('This profile is not a recycler');
+        return;
+      }
+      
+      setRecycler(data);
+    } catch (err) {
+      console.error('Error fetching recycler:', err);
+      setError(err.message || 'Failed to load recycler data');
+    } finally {
+      setLoading(false);
+    }
+  }, [recyclerId]);
+
   // Check authentication and role
   useEffect(() => {
     if (!authLoading) {
@@ -36,43 +65,9 @@ export default function RecyclePage() {
         router.push('/');
         return;
       }
-    }
-  }, [user, isCentreStaff, authLoading, router]);
-
-  const fetchRecycler = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, public_id, full_name')
-        .eq('id', recyclerId)
-        .eq('role', 'recycler')
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          setError('Recycler not found');
-        } else {
-          setError(error.message);
-        }
-        setLoading(false);
-        return;
-      }
-
-      setRecycler(data);
-    } catch (err) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }, [recyclerId]);
-
-  // Fetch recycler details
-  useEffect(() => {
-    if (recyclerId && !authLoading && user) {
       fetchRecycler();
     }
-  }, [recyclerId, authLoading, user, fetchRecycler]);
+  }, [user, isCentreStaff, authLoading, router, fetchRecycler]);
 
   const handleQuantityChange = (itemId, delta) => {
     setQuantities(prev => {

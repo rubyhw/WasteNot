@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -152,6 +154,36 @@ export async function POST(request) {
         { error: `Failed to create transactions: ${transactionsError.message}` },
         { status: 500 }
       );
+    }
+
+    // Calculate total points earned and update recycler's points_total
+    let totalPoints = 0;
+    transactions.forEach(tx => {
+      // For weight-based items (stored in grams), 1 point per 1000g (1kg)
+      // For quantity-based items, 1 point per item
+      if (weightBasedItems.includes(tx.item_id)) {
+        totalPoints += Math.floor(tx.quantity / 1000);
+      } else {
+        totalPoints += tx.quantity;
+      }
+    });
+
+    // Update recycler's points_total
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('points_total')
+      .eq('id', recyclerId)
+      .single();
+
+    const currentPoints = currentProfile?.points_total || 0;
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ points_total: currentPoints + totalPoints })
+      .eq('id', recyclerId);
+
+    if (updateError) {
+      console.error('Failed to update voucher points:', updateError);
+      // Don't fail the whole transaction, just log the error
     }
 
     return NextResponse.json({

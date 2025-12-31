@@ -47,15 +47,15 @@ export default function ProfilePage() {
     try {
       setLoading(true);
 
-      // Fetch user transactions
+      // Fetch user recycling transactions
       const { data: transactionsData, error: transactionsError } = await supabase
-        .from('transactions')
+        .from('recycling_transactions')
         .select(`
           *,
-          sessions (
+          session:recycling_sessions!session_id (
             id,
             created_at,
-            centre_staff:profiles!sessions_created_by_fkey (
+            collection_centre:profiles!collection_centre_id (
               full_name
             )
           )
@@ -66,7 +66,36 @@ export default function ProfilePage() {
       if (transactionsError) {
         console.error('Error fetching transactions:', transactionsError);
       } else {
-        setTransactions(transactionsData || []);
+        // Group transactions by session and calculate points per session
+        const sessionMap = {};
+        (transactionsData || []).forEach(tx => {
+          if (!sessionMap[tx.session_id]) {
+            sessionMap[tx.session_id] = {
+              id: tx.session_id,
+              created_at: tx.session?.created_at || tx.created_at,
+              session: tx.session,
+              items: {},
+              points_earned: 0
+            };
+          }
+          // Store quantity for each item
+          sessionMap[tx.session_id].items[tx.item_id] = tx.quantity;
+          // Calculate points: 1 point per item (for quantity) or per kg converted from grams (for weight)
+          const weightBasedItems = [3, 5]; // Newspaper and Cardboard
+          if (weightBasedItems.includes(tx.item_id)) {
+            sessionMap[tx.session_id].points_earned += Math.floor(tx.quantity / 1000); // Convert grams to kg for points
+          } else {
+            sessionMap[tx.session_id].points_earned += tx.quantity;
+          }
+        });
+        
+        // Convert session map to array and flatten item data
+        const processedTransactions = Object.values(sessionMap).map(session => ({
+          ...session,
+          ...session.items // Spread items as properties like {1: 5, 2: 3, ...}
+        }));
+        
+        setTransactions(processedTransactions);
       }
 
       // Fetch available vouchers
@@ -252,6 +281,10 @@ export default function ProfilePage() {
   };
 
   const getTotalPoints = () => {
+    // Use points_total from profile if available, otherwise calculate from transactions
+    if (profile && profile.points_total !== null && profile.points_total !== undefined) {
+      return profile.points_total;
+    }
     return transactions.reduce((total, transaction) => {
       return total + (transaction.points_earned || 0);
     }, 0);
@@ -377,7 +410,7 @@ export default function ProfilePage() {
                         <div className="activity-points">+{transaction.points_earned} points</div>
                       </div>
                       <div className="activity-centre">
-                        {transaction.sessions?.centre_staff?.full_name || 'Collection Centre'}
+                        {transaction.session?.collection_centre?.full_name || 'Collection Centre'}
                       </div>
                     </div>
                   ))}
@@ -715,7 +748,7 @@ export default function ProfilePage() {
                         <div className="transaction-points">+{transaction.points_earned} points</div>
                       </div>
                       <div className="transaction-centre">
-                        {transaction.sessions?.centre_staff?.full_name || 'Collection Centre'}
+                        {transaction.session?.collection_centre?.full_name || 'Collection Centre'}
                       </div>
                       <div className="transaction-items">
                         {RECYCLABLE_ITEMS.map((item) => {

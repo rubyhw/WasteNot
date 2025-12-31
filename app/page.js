@@ -169,15 +169,50 @@ export default function Home() {
     try {
       setLoadingStats(true);
       const { data: transactionsData, error: transactionsError } = await supabase
-        .from('transactions')
-        .select('*')
+        .from('recycling_transactions')
+        .select(`
+          *,
+          session:recycling_sessions!session_id (
+            id,
+            created_at,
+            collection_centre:profiles!collection_centre_id (
+              full_name
+            )
+          )
+        `)
         .eq('recycler_id', user.id)
         .order('created_at', { ascending: false });
 
       if (transactionsError) {
         console.error('Error fetching transactions:', transactionsError);
       } else {
-        const transactions = transactionsData || [];
+        // Group transactions by session
+        const sessionMap = {};
+        (transactionsData || []).forEach(tx => {
+          if (!sessionMap[tx.session_id]) {
+            sessionMap[tx.session_id] = {
+              id: tx.session_id,
+              created_at: tx.session?.created_at || tx.created_at,
+              session: tx.session,
+              items: {},
+              points_earned: 0
+            };
+          }
+          sessionMap[tx.session_id].items[tx.item_id] = tx.quantity;
+          // Calculate points
+          const weightBasedItems = [3, 5];
+          if (weightBasedItems.includes(tx.item_id)) {
+            sessionMap[tx.session_id].points_earned += Math.floor(tx.quantity / 1000);
+          } else {
+            sessionMap[tx.session_id].points_earned += tx.quantity;
+          }
+        });
+        
+        const transactions = Object.values(sessionMap).map(session => ({
+          ...session,
+          ...session.items
+        }));
+        
         const totalRecycled = transactions.reduce((total, transaction) => {
           return total + RECYCLABLE_ITEMS.reduce((itemTotal, item) => {
             return itemTotal + (transaction[item.id] || 0);

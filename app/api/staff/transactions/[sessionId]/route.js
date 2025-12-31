@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -129,6 +131,11 @@ export async function PATCH(request, { params }) {
     });
 
     // Delete existing transactions for this session
+    const { data: oldTransactions } = await supabase
+      .from('recycling_transactions')
+      .select('item_id, quantity')
+      .eq('session_id', sessionId);
+
     const { error: deleteError } = await supabase
       .from('recycling_transactions')
       .delete()
@@ -151,6 +158,50 @@ export async function PATCH(request, { params }) {
         { error: `Failed to update transactions: ${insertError.message}` },
         { status: 500 }
       );
+    }
+
+    // Recalculate points difference and update recycler's points_total
+    // (weightBasedItems already defined above)
+    
+    // Calculate old points
+    let oldPoints = 0;
+    (oldTransactions || []).forEach(tx => {
+      if (weightBasedItems.includes(tx.item_id)) {
+        oldPoints += Math.floor(tx.quantity / 1000);
+      } else {
+        oldPoints += tx.quantity;
+      }
+    });
+
+    // Calculate new points
+    let newPoints = 0;
+    transactions.forEach(tx => {
+      if (weightBasedItems.includes(tx.item_id)) {
+        newPoints += Math.floor(tx.quantity / 1000);
+      } else {
+        newPoints += tx.quantity;
+      }
+    });
+
+    const pointsDifference = newPoints - oldPoints;
+
+    // Update recycler's points_total if there's a difference
+    if (pointsDifference !== 0) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('points_total')
+        .eq('id', session.recycler_id)
+        .single();
+
+      const currentPoints = currentProfile?.points_total || 0;
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ points_total: Math.max(0, currentPoints + pointsDifference) })
+        .eq('id', session.recycler_id);
+
+      if (updateError) {
+        console.error('Failed to update voucher points:', updateError);
+      }
     }
 
     return NextResponse.json({ success: true });
@@ -190,7 +241,7 @@ export async function DELETE(request, { params }) {
     // Ensure session belongs to this collection centre
     const { data: session, error: sessionError } = await supabase
       .from('recycling_sessions')
-      .select('id, collection_centre_id')
+      .select('id, collection_centre_id, recycler_id')
       .eq('id', sessionId)
       .single();
 
@@ -207,6 +258,23 @@ export async function DELETE(request, { params }) {
         { status: 403 }
       );
     }
+
+    // Get transactions to calculate points to deduct
+    const { data: oldTransactions } = await supabase
+      .from('recycling_transactions')
+      .select('item_id, quantity')
+      .eq('session_id', sessionId);
+
+    // Calculate points to deduct
+    const weightBasedItems = [3, 5];
+    let pointsToDeduct = 0;
+    (oldTransactions || []).forEach(tx => {
+      if (weightBasedItems.includes(tx.item_id)) {
+        pointsToDeduct += Math.floor(tx.quantity / 1000);
+      } else {
+        pointsToDeduct += tx.quantity;
+      }
+    });
 
     // Delete transactions first
     const { error: txError } = await supabase
@@ -232,6 +300,25 @@ export async function DELETE(request, { params }) {
         { error: `Failed to delete session: ${sessionDeleteError.message}` },
         { status: 500 }
       );
+    }
+
+    // Update recycler's points_total
+    if (pointsToDeduct > 0) {
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('points_total')
+        .eq('id', session.recycler_id)
+        .single();
+
+      const currentPoints = currentProfile?.points_total || 0;
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ points_total: Math.max(0, currentPoints - pointsToDeduct) })
+        .eq('id', session.recycler_id);
+
+      if (updateError) {
+        console.error('Failed to update voucher points:', updateError);
+      }
     }
 
     return NextResponse.json({ success: true });

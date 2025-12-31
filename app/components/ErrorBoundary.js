@@ -33,7 +33,7 @@ class ErrorBoundary extends React.Component {
             Something went wrong
           </h2>
           <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-            We're sorry for the inconvenience. The application encountered an unexpected error.
+            We&apos;re sorry for the inconvenience. The application encountered an unexpected error.
           </p>
           <button
             onClick={() => {

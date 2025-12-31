@@ -114,7 +114,8 @@ export default function Home() {
   const [showCenters, setShowCenters] = useState(false);
   
   // Determine what content to show
-  const isRecycler = !authLoading && user && !isCentreStaff;
+  // Only redirect if user and role are loaded
+  const isRecycler = !authLoading && user && !isCentreStaff && role !== 'admin';
   const showGeneralContent = !authLoading && !user;
 
   const handleSearch = async (e) => {

@@ -417,7 +417,7 @@ export default function Home() {
                   onClick={findNearestCenters}
                   disabled={locationLoading}
                 >
-                  {locationLoading ? 'Finding...' : '📍 Find Collection Centres'}
+                  {locationLoading ? 'Finding...' : 'Find Collection Centres'}
                 </button>
               </div>
             </div>

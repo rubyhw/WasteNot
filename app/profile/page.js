@@ -430,7 +430,6 @@ export default function ProfilePage() {
               {/* Member ID Card */}
               <div className="member-id-card">
                 <div className="card-header">
-                  <div className="card-icon">🆔</div>
                   <h3>Member ID</h3>
                 </div>
                 <div className="member-id-display">
@@ -448,7 +447,6 @@ export default function ProfilePage() {
               {/* Quick Statistics */}
               <div className="stats-card">
                 <div className="card-header">
-                  <div className="card-icon">📊</div>
                   <h3>Quick Statistics</h3>
                 </div>
                 <div className="stats-grid">
@@ -470,7 +468,6 @@ export default function ProfilePage() {
               {/* Recent Activity */}
               <div className="activity-card">
                 <div className="card-header">
-                  <div className="card-icon">🕒</div>
                   <h3>Recent Activity</h3>
                 </div>
                 <div className="activity-list">
@@ -520,7 +517,6 @@ export default function ProfilePage() {
                   padding: '60px 20px',
                   color: 'var(--muted)'
                 }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎁</div>
                   <p style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>No vouchers available yet</p>
                   <p>Check back later for exciting rewards!</p>
                 </div>
@@ -569,7 +565,6 @@ export default function ProfilePage() {
                           fontSize: '32px',
                           marginBottom: '16px'
                         }}>
-                          🎟️
                         </div>
                         
                         <h3 style={{ 
@@ -647,7 +642,6 @@ export default function ProfilePage() {
           <div className="personal-section">
             <div className="personal-card">
               <div className="card-header">
-                <div className="card-icon">👤</div>
                 <h3>Personal Information</h3>
                 {!editMode && (
                   <button
@@ -753,7 +747,6 @@ export default function ProfilePage() {
           <div className="history-section">
             <div className="history-card">
               <div className="card-header">
-                <div className="card-icon">📈</div>
                 <h3>Recycling History Report</h3>
               </div>
 
@@ -927,7 +920,6 @@ export default function ProfilePage() {
           <div className="settings-section">
             <div className="settings-card">
               <div className="card-header">
-                <div className="card-icon">⚙️</div>
                 <h3>{t('profile.accountSettings')}</h3>
               </div>
 

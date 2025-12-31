@@ -16,12 +16,23 @@ export default function Header() {
     { label: 'Home', href: role === 'admin' ? '/admin' : '/' },
   ];
 
+  // Admin-specific navigation
+  const adminNavItems = role === 'admin'
+    ? [
+        { label: 'Admin Panel', href: '/admin' },
+        { label: 'Users', href: '/admin/users' },
+        { label: 'Vouchers', href: '/admin/vouchers' },
+        { label: 'Items', href: '/admin/items' },
+      ]
+    : [];
+
   // Only show Transaction and Report for centre_staff
   const centreStaffNavItems = isCentreStaff
     ? [
-      { label: 'Transaction', href: '/transactions' },
-      { label: 'Report', href: '/reports' },
-    ]
+        { label: 'Home', href: '/' },
+        { label: 'Transaction', href: '/transactions' },
+        { label: 'Report', href: '/reports' },
+      ]
     : [];
 
   // Show Profile for regular authenticated users
@@ -31,7 +42,7 @@ export default function Header() {
       ]
     : [];
 
-  const navItems = [...baseNavItems, ...centreStaffNavItems, ...userNavItems];
+  const navItems = [...(role === 'admin' ? adminNavItems : baseNavItems), ...centreStaffNavItems, ...userNavItems];
 
   return (
     <header className="header">
@@ -87,8 +98,11 @@ export default function Header() {
               <>
                 <div className="user-info">
                   <span className="user-name">
-                    {profile?.email || profile?.full_name || user.email}
+                    {profile?.full_name || user.email}
                   </span>
+                  {role === 'admin' && (
+                    <span className="user-role" style={{ background: '#dc2626' }}>Admin</span>
+                  )}
                   {isCentreStaff && (
                     <span className="user-role">Centre Staff</span>
                   )}

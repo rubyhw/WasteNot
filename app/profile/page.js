@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [updatedPointsTotal, setUpdatedPointsTotal] = useState(null);
   const [editData, setEditData] = useState({
     full_name: '',
     email: '',
@@ -66,8 +67,11 @@ export default function ProfilePage() {
       if (transactionsError) {
         console.error('Error fetching transactions:', transactionsError);
       } else {
+        console.log('Fetched transactions:', transactionsData?.length || 0, 'transactions for user:', user?.id);
         // Group transactions by session and calculate points per session
         const sessionMap = {};
+        let totalCalculatedPoints = 0;
+        
         (transactionsData || []).forEach(tx => {
           if (!sessionMap[tx.session_id]) {
             sessionMap[tx.session_id] = {
@@ -82,11 +86,14 @@ export default function ProfilePage() {
           sessionMap[tx.session_id].items[tx.item_id] = tx.quantity;
           // Calculate points: 1 point per item (for quantity) or per kg converted from grams (for weight)
           const weightBasedItems = [3, 5]; // Newspaper and Cardboard
+          let pointsForThisItem = 0;
           if (weightBasedItems.includes(tx.item_id)) {
-            sessionMap[tx.session_id].points_earned += Math.floor(tx.quantity / 1000); // Convert grams to kg for points
+            pointsForThisItem = Math.floor(tx.quantity / 1000); // Convert grams to kg for points
           } else {
-            sessionMap[tx.session_id].points_earned += tx.quantity;
+            pointsForThisItem = tx.quantity;
           }
+          sessionMap[tx.session_id].points_earned += pointsForThisItem;
+          totalCalculatedPoints += pointsForThisItem;
         });
         
         // Convert session map to array and flatten item data
@@ -96,6 +103,30 @@ export default function ProfilePage() {
         }));
         
         setTransactions(processedTransactions);
+
+        // Always update profile's points_total to match calculated total from transactions
+        // This ensures points are always accurate based on actual transactions
+        console.log('Calculated total points from transactions:', totalCalculatedPoints);
+        console.log('Current profile points_total:', profile?.points_total);
+        console.log('Number of transactions:', transactionsData?.length || 0);
+        console.log('Transaction details:', transactionsData);
+        
+        // Always set the calculated points in local state for immediate UI display
+        setUpdatedPointsTotal(totalCalculatedPoints);
+        
+        // Update database if user exists
+        if (user?.id) {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ points_total: totalCalculatedPoints })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Error updating points_total:', updateError);
+          } else {
+            console.log('Successfully updated points_total to:', totalCalculatedPoints);
+          }
+        }
       }
 
       // Fetch available vouchers
@@ -263,31 +294,77 @@ export default function ProfilePage() {
   };
 
   const getTotalRecycled = () => {
-    return transactions.reduce((total, transaction) => {
-      return total + RECYCLABLE_ITEMS.reduce((itemTotal, item) => {
-        return itemTotal + (transaction[item.id] || 0);
-      }, 0);
-    }, 0);
+    const weightBasedItems = [3, 5]; // Newspaper (id: 3) and Cardboard (id: 5)
+    let totalQuantity = 0;
+    let totalWeight = 0; // in kg
+    
+    transactions.forEach(transaction => {
+      RECYCLABLE_ITEMS.forEach(item => {
+        const quantity = transaction[item.id] || 0;
+        if (quantity > 0) {
+          if (weightBasedItems.includes(item.id)) {
+            // Convert grams to kg for weight-based items
+            totalWeight += quantity / 1000;
+          } else {
+            // Count pieces for quantity-based items
+            totalQuantity += quantity;
+          }
+        }
+      });
+    });
+    
+    // Format the result: show quantity items and weight items separately
+    if (totalWeight > 0 && totalQuantity > 0) {
+      return `${totalQuantity} items, ${totalWeight.toFixed(1)} kg`;
+    } else if (totalWeight > 0) {
+      return `${totalWeight.toFixed(1)} kg`;
+    } else {
+      return totalQuantity;
+    }
   };
 
   const getItemBreakdown = () => {
     const breakdown = {};
+    const weightBasedItems = [3, 5]; // Newspaper (id: 3) and Cardboard (id: 5)
+    
     RECYCLABLE_ITEMS.forEach(item => {
-      breakdown[item.id] = transactions.reduce((total, transaction) => {
-        return total + (transaction[item.id] || 0);
+      const total = transactions.reduce((sum, transaction) => {
+        const quantity = transaction[item.id] || 0;
+        if (weightBasedItems.includes(item.id)) {
+          // Convert grams to kg for weight-based items
+          return sum + (quantity / 1000);
+        } else {
+          // Count pieces for quantity-based items
+          return sum + quantity;
+        }
       }, 0);
+      breakdown[item.id] = total;
     });
     return breakdown;
   };
 
   const getTotalPoints = () => {
-    // Use points_total from profile if available, otherwise calculate from transactions
+    // Use updated points from local state if available (most recent)
+    if (updatedPointsTotal !== null) {
+      return updatedPointsTotal;
+    }
+    
+    // Calculate from transactions first (most accurate)
+    const calculatedFromTransactions = transactions.reduce((total, transaction) => {
+      return total + (transaction.points_earned || 0);
+    }, 0);
+    
+    // If we have calculated points from transactions, use that
+    if (calculatedFromTransactions > 0) {
+      return calculatedFromTransactions;
+    }
+    
+    // Otherwise use points_total from profile if available
     if (profile && profile.points_total !== null && profile.points_total !== undefined) {
       return profile.points_total;
     }
-    return transactions.reduce((total, transaction) => {
-      return total + (transaction.points_earned || 0);
-    }, 0);
+    
+    return 0;
   };
 
   if (authLoading || loading) {
@@ -368,11 +445,11 @@ export default function ProfilePage() {
                 </button>
               </div>
 
-              {/* Quick Stats */}
+              {/* Quick Statistics */}
               <div className="stats-card">
                 <div className="card-header">
                   <div className="card-icon">📊</div>
-                  <h3>Quick Stats</h3>
+                  <h3>Quick Statistics</h3>
                 </div>
                 <div className="stats-grid">
                   <div className="stat-item" style={{ gridColumn: 'span 3', backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '12px', border: '2px solid #86efac' }}>
@@ -380,12 +457,8 @@ export default function ProfilePage() {
                       {getTotalPoints()}
                     </div>
                     <div className="stat-label" style={{ fontSize: '16px', color: '#15803d', fontWeight: '600' }}>
-                      🏆 Total Recycling Points
+                      Total Recycling Points Earned
                     </div>
-                  </div>
-                  <div className="stat-item">
-                    <div className="stat-value">{getTotalRecycled()}</div>
-                    <div className="stat-label">Items Recycled</div>
                   </div>
                   <div className="stat-item">
                     <div className="stat-value">{transactions.length}</div>
@@ -687,17 +760,47 @@ export default function ProfilePage() {
               {/* Summary Stats */}
               <div className="history-summary">
                 <div className="summary-grid">
-                  <div className="summary-item">
-                    <div className="summary-value">{getTotalRecycled()}</div>
-                    <div className="summary-label">Total Items Recycled</div>
+                  <div className="summary-item" style={{
+                    background: 'linear-gradient(135deg, rgba(35, 164, 85, 0.1), rgba(15, 167, 97, 0.05))',
+                    border: '2px solid rgba(35, 164, 85, 0.3)',
+                    borderRadius: '12px'
+                  }}>
+                    <div className="summary-value" style={{ 
+                      fontSize: '36px', 
+                      color: '#16a34a',
+                      fontWeight: '700'
+                    }}>
+                      {getTotalPoints()}
+                    </div>
+                    <div className="summary-label" style={{ 
+                      fontSize: '14px', 
+                      color: '#15803d',
+                      fontWeight: '600',
+                      marginTop: '8px'
+                    }}>
+                      Total Points Earned
+                    </div>
                   </div>
-                  <div className="summary-item">
-                    <div className="summary-value">{getTotalPoints()}</div>
-                    <div className="summary-label">Total Points Earned</div>
-                  </div>
-                  <div className="summary-item">
-                    <div className="summary-value">{transactions.length}</div>
-                    <div className="summary-label">Collection Visits</div>
+                  <div className="summary-item" style={{
+                    background: 'linear-gradient(135deg, rgba(35, 164, 85, 0.1), rgba(15, 167, 97, 0.05))',
+                    border: '2px solid rgba(35, 164, 85, 0.3)',
+                    borderRadius: '12px'
+                  }}>
+                    <div className="summary-value" style={{ 
+                      fontSize: '36px', 
+                      color: '#16a34a',
+                      fontWeight: '700'
+                    }}>
+                      {transactions.length}
+                    </div>
+                    <div className="summary-label" style={{ 
+                      fontSize: '14px', 
+                      color: '#15803d',
+                      fontWeight: '600',
+                      marginTop: '8px'
+                    }}>
+                      Collection Visits
+                    </div>
                   </div>
                 </div>
               </div>
@@ -708,9 +811,37 @@ export default function ProfilePage() {
                 <div className="breakdown-grid">
                   {RECYCLABLE_ITEMS.map((item) => {
                     const count = getItemBreakdown()[item.id] || 0;
+                    const weightBasedItems = [3, 5]; // Newspaper and Cardboard
+                    const isWeightBased = weightBasedItems.includes(item.id);
+                    const displayValue = isWeightBased 
+                      ? `${count.toFixed(1)} kg` 
+                      : count > 0 
+                        ? `${Math.round(count)} ${item.unit || 'items'}` 
+                        : '0 items';
+                    
                     return (
-                      <div key={item.id} className="breakdown-item">
-                        <div className="breakdown-icon">
+                      <div 
+                        key={item.id} 
+                        className="breakdown-item"
+                        style={{
+                          background: count > 0 ? 'linear-gradient(135deg, rgba(35, 164, 85, 0.08), rgba(15, 167, 97, 0.05))' : '#f9fafb',
+                          border: count > 0 ? '2px solid rgba(35, 164, 85, 0.2)' : '1px solid #e5e7eb',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          transition: 'all 0.2s ease',
+                          opacity: count > 0 ? 1 : 0.6
+                        }}
+                      >
+                        <div className="breakdown-icon" style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '10px',
+                          background: count > 0 ? 'rgba(35, 164, 85, 0.1)' : '#f3f4f6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '12px'
+                        }}>
                           <Image
                             src={item.icon}
                             alt={item.name}
@@ -719,9 +850,22 @@ export default function ProfilePage() {
                             style={{ objectFit: 'contain' }}
                           />
                         </div>
-                        <div className="breakdown-info">
-                          <div className="breakdown-name">{item.name}</div>
-                          <div className="breakdown-count">{count} items</div>
+                        <div className="breakdown-info" style={{ textAlign: 'center', width: '100%' }}>
+                          <div className="breakdown-name" style={{
+                            fontWeight: '600',
+                            fontSize: '15px',
+                            color: '#1f2937',
+                            marginBottom: '8px'
+                          }}>
+                            {item.name}
+                          </div>
+                          <div className="breakdown-count" style={{
+                            fontSize: '20px',
+                            fontWeight: '700',
+                            color: count > 0 ? '#16a34a' : '#9ca3af'
+                          }}>
+                            {displayValue}
+                          </div>
                         </div>
                       </div>
                     );
@@ -752,12 +896,20 @@ export default function ProfilePage() {
                       </div>
                       <div className="transaction-items">
                         {RECYCLABLE_ITEMS.map((item) => {
-                          const count = transaction[item.id] || 0;
-                          return count > 0 ? (
+                          const quantity = transaction[item.id] || 0;
+                          if (quantity <= 0) return null;
+                          
+                          const weightBasedItems = [3, 5]; // Newspaper (id: 3) and Cardboard (id: 5)
+                          const isWeightBased = weightBasedItems.includes(item.id);
+                          const displayValue = isWeightBased 
+                            ? `${(quantity / 1000).toFixed(1)} kg` 
+                            : `${quantity} ${item.unit || 'items'}`;
+                          
+                          return (
                             <span key={item.id} className="item-tag">
-                              {item.name}: {count}
+                              {item.name}: {displayValue}
                             </span>
-                          ) : null;
+                          );
                         })}
                       </div>
                     </div>

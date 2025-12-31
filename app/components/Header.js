@@ -25,7 +25,7 @@ export default function Header() {
     : [];
 
   // Show Profile for regular authenticated users
-  const userNavItems = user && !isCentreStaff
+  const userNavItems = user && !isCentreStaff && role !== 'admin'
     ? [
         { label: 'Profile', href: '/profile' },
       ]

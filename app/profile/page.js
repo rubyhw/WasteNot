@@ -15,9 +15,16 @@ export default function ProfilePage() {
   const language = languageContext?.language || 'en';
   const switchLanguage = languageContext?.switchLanguage || (() => {});
   const t = languageContext?.t || ((key) => key);
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [transactions, setTransactions] = useState([]);
   const [vouchers, setVouchers] = useState([]);
+  
+  // --- ADDED: New State for Leaderboard and Redemptions ---
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [redemptions, setRedemptions] = useState([]);
+  // --------------------------------------------------------
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -67,7 +74,6 @@ export default function ProfilePage() {
       if (transactionsError) {
         console.error('Error fetching transactions:', transactionsError);
       } else {
-        console.log('Fetched transactions:', transactionsData?.length || 0, 'transactions for user:', user?.id);
         // Group transactions by session and calculate points per session
         const sessionMap = {};
         let totalCalculatedPoints = 0;
@@ -104,29 +110,24 @@ export default function ProfilePage() {
         
         setTransactions(processedTransactions);
 
-        // Always update profile's points_total to match calculated total from transactions
-        // This ensures points are always accurate based on actual transactions
-        console.log('Calculated total points from transactions:', totalCalculatedPoints);
-        console.log('Current profile points_total:', profile?.points_total);
-        console.log('Number of transactions:', transactionsData?.length || 0);
-        console.log('Transaction details:', transactionsData);
+        // --- ADDED: Fetch Redemptions to Calculate Net Points ---
+        const { data: redemptionData } = await supabase
+          .from('voucher_redemptions')
+          .select('points_spent')
+          .eq('user_id', user.id);
         
-        // Always set the calculated points in local state for immediate UI display
-        setUpdatedPointsTotal(totalCalculatedPoints);
+        const totalSpent = redemptionData?.reduce((acc, r) => acc + r.points_spent, 0) || 0;
+        setRedemptions(redemptionData || []);
         
-        // Update database if user exists
-        if (user?.id) {
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ points_total: totalCalculatedPoints })
-            .eq('id', user.id);
+        // Net Points = Earned - Spent
+        const netPoints = totalCalculatedPoints - totalSpent;
+        setUpdatedPointsTotal(netPoints);
 
-          if (updateError) {
-            console.error('Error updating points_total:', updateError);
-          } else {
-            console.log('Successfully updated points_total to:', totalCalculatedPoints);
-          }
+        // Update database with net points
+        if (user?.id) {
+          await supabase.from('profiles').update({ points_total: netPoints }).eq('id', user.id);
         }
+        // --------------------------------------------------------
       }
 
       // Fetch available vouchers
@@ -141,6 +142,18 @@ export default function ProfilePage() {
       } else {
         setVouchers(vouchersData || []);
       }
+
+      // --- ADDED: Fetch Leaderboard Data ---
+      try {
+        const lbRes = await fetch('/api/leaderboard');
+        const lbData = await lbRes.json();
+        if (lbData.leaderboard) {
+          setLeaderboard(lbData.leaderboard);
+        }
+      } catch (err) {
+        console.error("Leaderboard fetch error", err);
+      }
+      // -------------------------------------
 
       // Set edit data from profile
       if (profile) {
@@ -169,6 +182,41 @@ export default function ProfilePage() {
     }
   }, [user, authLoading, router, fetchUserData]);
 
+  // --- ADDED: Redeem Function Logic ---
+  const handleRedeem = async (voucher) => {
+    if (updatedPointsTotal < voucher.points_cost) {
+      alert("Insufficient points!");
+      return;
+    }
+
+    const confirm = window.confirm(`Redeem ${voucher.name} for ${voucher.points_cost} points?`);
+    if (!confirm) return;
+
+    try {
+      const res = await fetch('/api/vouchers/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          voucherId: voucher.id,
+          cost: voucher.points_cost
+        })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert("Voucher redeemed successfully!");
+        fetchUserData(); // Refresh to update points balance
+      } else {
+        alert("Redemption failed: " + (result.error || 'Unknown error'));
+      }
+    } catch (e) {
+      console.error(e);
+      alert("System error during redemption");
+    }
+  };
+  // ------------------------------------
+
   const generatePublicId = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/create-profile', {
@@ -185,7 +233,6 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        // Refresh the page or reload profile
         window.location.reload();
       }
     } catch (error) {
@@ -193,7 +240,6 @@ export default function ProfilePage() {
     }
   }, [user?.id, user?.email, profile?.full_name, profile?.role]);
 
-  // Generate public_id if missing
   useEffect(() => {
     if (profile && !profile.public_id && user) {
       generatePublicId();
@@ -216,7 +262,6 @@ export default function ProfilePage() {
       if (error) throw error;
 
       setEditMode(false);
-      // Refresh profile data
       window.location.reload();
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -234,7 +279,6 @@ export default function ProfilePage() {
       ...prev,
       [setting]: value
     }));
-    // In a real app, you'd save this to the database
   };
 
   const exportUserData = () => {
@@ -294,26 +338,24 @@ export default function ProfilePage() {
   };
 
   const getTotalRecycled = () => {
-    const weightBasedItems = [3, 5]; // Newspaper (id: 3) and Cardboard (id: 5)
+    // Logic mostly unchanged
+    const weightBasedItems = [3, 5];
     let totalQuantity = 0;
-    let totalWeight = 0; // in kg
+    let totalWeight = 0; 
     
     transactions.forEach(transaction => {
       RECYCLABLE_ITEMS.forEach(item => {
         const quantity = transaction[item.id] || 0;
         if (quantity > 0) {
           if (weightBasedItems.includes(item.id)) {
-            // Convert grams to kg for weight-based items
             totalWeight += quantity / 1000;
           } else {
-            // Count pieces for quantity-based items
             totalQuantity += quantity;
           }
         }
       });
     });
     
-    // Format the result: show quantity items and weight items separately
     if (totalWeight > 0 && totalQuantity > 0) {
       return `${totalQuantity} items, ${totalWeight.toFixed(1)} kg`;
     } else if (totalWeight > 0) {
@@ -325,16 +367,14 @@ export default function ProfilePage() {
 
   const getItemBreakdown = () => {
     const breakdown = {};
-    const weightBasedItems = [3, 5]; // Newspaper (id: 3) and Cardboard (id: 5)
+    const weightBasedItems = [3, 5];
     
     RECYCLABLE_ITEMS.forEach(item => {
       const total = transactions.reduce((sum, transaction) => {
         const quantity = transaction[item.id] || 0;
         if (weightBasedItems.includes(item.id)) {
-          // Convert grams to kg for weight-based items
           return sum + (quantity / 1000);
         } else {
-          // Count pieces for quantity-based items
           return sum + quantity;
         }
       }, 0);
@@ -344,26 +384,14 @@ export default function ProfilePage() {
   };
 
   const getTotalPoints = () => {
-    // Use updated points from local state if available (most recent)
+    // Return the calculated net points
     if (updatedPointsTotal !== null) {
       return updatedPointsTotal;
     }
-    
-    // Calculate from transactions first (most accurate)
-    const calculatedFromTransactions = transactions.reduce((total, transaction) => {
-      return total + (transaction.points_earned || 0);
-    }, 0);
-    
-    // If we have calculated points from transactions, use that
-    if (calculatedFromTransactions > 0) {
-      return calculatedFromTransactions;
-    }
-    
-    // Otherwise use points_total from profile if available
+    // Fallback if needed
     if (profile && profile.points_total !== null && profile.points_total !== undefined) {
       return profile.points_total;
     }
-    
     return 0;
   };
 
@@ -402,6 +430,14 @@ export default function ProfilePage() {
         >
           Voucher Catalogue
         </button>
+        {/* --- ADDED: Leaderboard Tab --- */}
+        <button
+          className={`tab-button ${activeTab === 'leaderboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leaderboard')}
+        >
+          Leaderboard
+        </button>
+        {/* ----------------------------- */}
         <button
           className={`tab-button ${activeTab === 'personal' ? 'active' : ''}`}
           onClick={() => setActiveTab('personal')}
@@ -455,7 +491,7 @@ export default function ProfilePage() {
                       {getTotalPoints()}
                     </div>
                     <div className="stat-label" style={{ fontSize: '16px', color: '#15803d', fontWeight: '600' }}>
-                      Total Recycling Points Earned
+                      Current Points Balance
                     </div>
                   </div>
                   <div className="stat-item">
@@ -492,6 +528,53 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* --- ADDED: Leaderboard Content --- */}
+        {activeTab === 'leaderboard' && (
+          <div className="leaderboard-section">
+            <div className="history-card">
+              <div className="card-header">
+                <h3>Community Leaderboard</h3>
+                <p style={{fontSize: '14px', color: '#666', marginTop: '5px'}}>Top recyclers in the community</p>
+              </div>
+              <div className="transaction-list" style={{ marginTop: '15px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #eee', textAlign: 'left', color: '#666' }}>
+                      <th style={{ padding: '15px' }}>Rank</th>
+                      <th style={{ padding: '15px' }}>User</th>
+                      <th style={{ padding: '15px', textAlign: 'right' }}>Total Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.length === 0 ? (
+                      <tr><td colSpan="3" style={{padding: '20px', textAlign: 'center'}}>Loading leaderboard...</td></tr>
+                    ) : (
+                      leaderboard.map((u, index) => (
+                        <tr key={u.id} style={{ 
+                          borderBottom: '1px solid #f0f0f0', 
+                          backgroundColor: u.id === user?.id ? '#f0fdf4' : 'transparent' 
+                        }}>
+                          <td style={{ padding: '15px', fontWeight: 'bold', color: index < 3 ? '#d97706' : '#444' }}>
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          </td>
+                          <td style={{ padding: '15px' }}>
+                            <div style={{fontWeight: '600'}}>{u.full_name || 'Anonymous User'}</div>
+                            <div style={{fontSize: '12px', color: '#888'}}>ID: {u.public_id}</div>
+                          </td>
+                          <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: '#16a34a' }}>
+                            {u.points_total}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* ---------------------------------- */}
 
         {activeTab === 'vouchers' && (
           <div className="vouchers-section">
@@ -565,12 +648,14 @@ export default function ProfilePage() {
                           fontSize: '32px',
                           marginBottom: '16px'
                         }}>
+                          {/* Icon placeholder */}
+                          🎁
                         </div>
                         
                         <h3 style={{ 
                           fontSize: '20px', 
                           fontWeight: '600', 
-                          marginBottom: '8px',
+                          marginBottom: '8px', 
                           color: '#1f2937'
                         }}>
                           {voucher.name}
@@ -614,6 +699,7 @@ export default function ProfilePage() {
                           </span>
                         </div>
                         
+                        {/* --- ADDED: Updated Button Logic --- */}
                         <button
                           className="btn primary small"
                           disabled={!canAfford}
@@ -623,12 +709,13 @@ export default function ProfilePage() {
                           }}
                           onClick={() => {
                             if (canAfford) {
-                              alert('Voucher redemption feature coming soon! You will be able to redeem ' + voucher.name + ' for ' + voucher.points_cost + ' points.');
+                              handleRedeem(voucher);
                             }
                           }}
                         >
                           {canAfford ? 'Redeem' : 'Locked'}
                         </button>
+                        {/* ---------------------------------- */}
                       </div>
                     </div>
                   );
@@ -771,7 +858,7 @@ export default function ProfilePage() {
                       fontWeight: '600',
                       marginTop: '8px'
                     }}>
-                      Total Points Earned
+                      Current Points Balance
                     </div>
                   </div>
                   <div className="summary-item" style={{

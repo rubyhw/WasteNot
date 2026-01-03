@@ -7,6 +7,7 @@ export default function VouchersPage() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [term, setTerm] = useState("");
+    const [leaders, setLeaders] = useState([]);
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,9 +24,18 @@ export default function VouchersPage() {
     });
     const [formLoading, setFormLoading] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, []);
+useEffect(() => {
+    (async () => {
+        try {
+            const res = await fetch('/api/leaderboard');
+            const data = await res.json();
+            setLeaders(data);
+        } catch (error) {
+            console.error(error);
+        }
+    })();
+    loadData();
+}, []);
 
     async function loadData() {
         try {
@@ -118,12 +128,12 @@ export default function VouchersPage() {
     );
 
     return (
-        <div>
+        <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
             {/* Header Actions */}
             <div className="admin-toolbar">
                 <div>
-                    <h1 className="section-title">Vouchers</h1>
-                    <p style={{ color: 'var(--muted)' }}>Manage redemption rewards</p>
+                    <h1 className="section-title">Rewards & Rankings</h1>
+                    <p style={{ color: 'var(--muted)' }}>Manage redemption rewards and track top contributors</p>
                 </div>
                 <button
                     className="btn primary"
@@ -135,8 +145,16 @@ export default function VouchersPage() {
                 </button>
             </div>
 
-            {/* Table */}
-            <div className="table-container">
+            {/* Main Grid Layout */}
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 350px', 
+                gap: '24px', 
+                alignItems: 'start' 
+            }}>
+            
+            {/* LEFT COLUMN: Vouchers Table */}
+            <div className="table-container" style={{ margin: 0 }}>
                 <div className="table-actions-header">
                     <div style={{ position: 'relative' }}>
                         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
@@ -177,19 +195,15 @@ export default function VouchersPage() {
                                             <div className="avatar-circle" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#ffedd5' }}>
                                                 <Tag size={16} />
                                             </div>
-                                            <div>
-                                                <div className="user-name">{item.name}</div>
-                                            </div>
+                                            <div className="user-name">{item.name}</div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ fontSize: 12, fontFamily: 'monospace', maxWidth: 350, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
-                                            {item.description && item.description.trim() !== "" ? item.description : "-"}
+                                        <div style={{ fontSize: 12, fontFamily: 'monospace', maxWidth: 250, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {item.description || "-"}
                                         </div>
                                     </td>
-                                    <td style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 600 }}>
-                                        {item.points_cost}
-                                    </td>
+                                    <td style={{ fontWeight: 600 }}>{item.points_cost}</td>
                                     <td>
                                         <span className={`badge ${item.is_active ? 'badge-green' : 'badge-red'}`}>
                                             {item.is_active ? 'Active' : 'Inactive'}
@@ -197,20 +211,8 @@ export default function VouchersPage() {
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div className="action-buttons">
-                                            <button
-                                                className="btn-action edit"
-                                                title="Edit Voucher"
-                                                onClick={() => openEditModal(item)}
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button
-                                                className="btn-action delete"
-                                                title="Delete Voucher"
-                                                onClick={() => openDeleteModal(item)}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <button className="btn-action edit" onClick={() => openEditModal(item)}><Pencil size={16} /></button>
+                                            <button className="btn-action delete" onClick={() => openDeleteModal(item)}><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -218,6 +220,79 @@ export default function VouchersPage() {
                         )}
                     </tbody>
                 </table>
+            </div>
+
+{/* RIGHT COLUMN: Leaderboard Sidebar */}
+<aside style={{ 
+    background: 'white', 
+    borderRadius: '12px', 
+    border: '1px solid #e2e8f0', 
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+}}>
+    <div style={{ 
+        padding: '16px', 
+        borderBottom: '1px solid #e2e8f0', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        background: '#f8fafc',
+        borderTopLeftRadius: '12px',
+        borderTopRightRadius: '12px'
+    }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Tag size={18} style={{ color: '#f59e0b' }} />
+            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>Top Recyclers</h2>
+        </div>
+    </div>
+
+    <div style={{ padding: '8px' }}>
+        {leaders && leaders.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                No data yet
+            </div>
+        ) : (
+           (Array.isArray(leaders) ? leaders : []).map((user, index) => (
+                <div key={user.id || index} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '12px',
+                    borderRadius: '8px',
+                    marginBottom: '4px',
+                    background: index === 0 ? '#fffbeb' : 'transparent'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ 
+                            width: '20px', 
+                            fontSize: '12px', 
+                            fontWeight: 800, 
+                            color: index === 0 ? '#f59e0b' : '#94a3b8' 
+                        }}>
+                            #{index + 1}
+                        </span>
+                        <div>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                                {user.public_id || 'Member'}
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>
+                                Rank {index + 1}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#10b981' }}>
+                            {user.points_total || 0}
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
+                            Points
+                        </div>
+                    </div>
+                </div>
+            ))
+        )}
+    </div>
+</aside>
             </div>
 
             {/* Unified Modal */}

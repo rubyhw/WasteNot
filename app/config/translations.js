@@ -4,7 +4,14 @@ export const translations = {
       home: "Home",
       learn: "Learn & Recycle",
       login: "Login",
-      register: "Register"
+      register: "Register",
+      profile: "Profile",
+      transaction: "Transaction",
+      report: "Report",
+      adminPanel: "Admin Panel",
+      users: "Users",
+      vouchers: "Vouchers",
+      items: "Items"
     },
     hero: {
       badge: "WasteNot · Recycle better",
@@ -17,6 +24,46 @@ export const translations = {
     items: {
       title: "Recyclable Items Accepted",
       description: "WasteNot accepts five types of recyclable items at our collection centres:"
+    },
+    auth: {
+      login: {
+        title: "Sign in to your account",
+        subtitle: "Welcome back to WasteNot",
+        email: "Email address",
+        password: "Password",
+        showPassword: "Show password",
+        hidePassword: "Hide password",
+        signIn: "Sign in",
+        signingIn: "Signing in...",
+        forgotPassword: "Forgot password?",
+        noAccount: "Don't have an account?",
+        signUp: "Sign up",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "Enter your password",
+        rememberMe: "Remember me"
+      },
+      register: {
+        title: "Create an account",
+        subtitle: "Sign up for a WasteNot account",
+        roleLabel: "I am registering as:",
+        recycler: "Recycler (Normal User)",
+        centreStaff: "Collection Centre",
+        centreName: "Collection Centre Name",
+        fullName: "Full name",
+        email: "Email address",
+        password: "Password",
+        confirmPassword: "Confirm password",
+        createAccount: "Create account",
+        creatingAccount: "Creating account...",
+        haveAccount: "Already have an account?",
+        signIn: "Sign in",
+        centreNamePlaceholder: "Enter your collection centre name",
+        fullNamePlaceholder: "Your full name",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "Choose a password",
+        confirmPasswordPlaceholder: "Confirm password",
+        accountCreated: "Account successfully created!"
+      }
     },
     profile: {
       overview: "Overview",
@@ -41,6 +88,164 @@ export const translations = {
       totalRecycled: "Total Recycled",
       transactions: "Transactions",
       noTransactions: "No transactions found. Start recycling to build your history!"
+    },
+    dashboard: {
+      welcomeBack: "Welcome back",
+      hello: "Hello",
+      trackProgress: "Track your recycling progress and manage your account",
+      memberId: "Member ID",
+      showIdAtCentres: "Show this ID at collection centres",
+      copyId: "Copy ID",
+      quickStats: "Quick Stats",
+      itemsRecycled: "Items Recycled",
+      pointsEarned: "Points Earned",
+      collectionVisits: "Collection Visits",
+      loadingStats: "Loading stats...",
+      loading: "Loading...",
+      findNearestCenters: "Find Nearest Collection Centres",
+      nearestCollectionCentres: "Nearest Collection Centres",
+      away: "away",
+      getDirections: "Get Directions",
+      hideCentres: "Hide Centres",
+      locatingCentres: "Locating centres...",
+      viewProfile: "View Profile"
+    },
+    centreStaff: {
+      findRecycler: "Find Recycler",
+      searchByMemberCode: "Search for a recycler by member code",
+      memberCode: "Member Code",
+      enterMemberCode: "Enter member code",
+      search: "Search",
+      searching: "Searching...",
+      clickToRecord: "Click to record recycling →",
+      pleaseEnterCode: "Please enter a member code"
+    },
+    steps: {
+      title: "How WasteNot Works",
+      subtitle: "Follow these steps to start recycling, earning points, and redeeming rewards.",
+      step1: {
+        label: "Register an Account",
+        detail: "Users create an account on the WasteNot website using a valid email and password."
+      },
+      step2: {
+        label: "Bring Recyclable Items to a Collection Centre",
+        detail: "Users bring accepted recyclable items to a WasteNot recycling collection centre."
+      },
+      step3: {
+        label: "Provide Member Code to Staff",
+        detail: "Users present their WasteNot Member Code to the collection centre staff for identification."
+      },
+      step4: {
+        label: "Staff Records Recycled Items",
+        detail: "Collection centre staff calculate and record the quantities of recycled items for the user in the system."
+      },
+      step5: {
+        label: "Earn Rewards Points",
+        detail: "Reward points are automatically awarded for every recycling activity and can be used to redeem available vouchers."
+      }
+    },
+    cta: {
+      badge: "Join the movement",
+      title: "Start recycling smarter today",
+      description: "Set your location, get custom tips, and keep your community green.",
+      createAccount: "Create account",
+      learnMore: "Learn more"
+    },
+    footer: {
+      tagline: "WasteNot · Recycling made simple",
+      by: "By CodeZap"
+    },
+    transactions: {
+      title: "Transactions",
+      subtitle: "View recycling transactions and totals",
+      filterByRecycler: "Filter by Recycler",
+      memberCode: "Member Code",
+      enterMemberCode: "Enter member code",
+      search: "Search",
+      searching: "Searching...",
+      clear: "Clear",
+      selected: "Selected",
+      totalRecycledBy: "Total Recycled by",
+      perItem: "(Per Item)",
+      noTransactions: "No transactions for this recycler",
+      viewAllTransactions: "View All Transactions",
+      deleteMode: "Delete Mode",
+      cancelDelete: "Cancel Delete",
+      deleteSelected: "Delete Selected",
+      deleting: "Deleting...",
+      editTransaction: "Edit Transaction",
+      editing: "Editing",
+      transactionHistory: "Transaction History",
+      noTransactionsFound: "No transactions found",
+      recycler: "Recycler",
+      itemsRecycled: "Items Recycled",
+      date: "Date",
+      actions: "Actions",
+      edit: "Edit",
+      delete: "Delete",
+      updateQuantities: "Update Quantities",
+      updating: "Updating...",
+      cancel: "Cancel",
+      units: "units"
+    },
+    reports: {
+      title: "Report",
+      monthlySubtitle: "Collection summary for",
+      annualSubtitle: "This year's collection summary",
+      monthly: "Monthly",
+      annual: "Annual",
+      totalItemsCollected: "Total Items Collected",
+      selectedMonth: "Selected Month",
+      thisYear: "This Year",
+      uniqueRecyclers: "Unique Recyclers",
+      totalSessions: "Total Sessions",
+      topCollectedItem: "Top Collected Item",
+      mostRecycledPlasticsMetal: "Most Recycled (Plastics/Metal)",
+      newspaperCollected: "Newspaper Collected",
+      cardboardCollected: "Cardboard Collected",
+      loadingReport: "Loading monthly report...",
+      reportError: "Report Error"
+    },
+    recycle: {
+      recordRecycling: "Record Recycling",
+      memberCode: "Member Code",
+      back: "Back",
+      goBack: "Go Back",
+      loading: "Loading...",
+      error: "Error",
+      confirmAndSubmit: "Confirm and Submit",
+      submitting: "Submitting...",
+      reviewRecyclingItems: "Review Recycling Items",
+      recycler: "Recycler",
+      itemsToBeRecorded: "Items to be Recorded",
+      totalPointsToBeAwarded: "Total Points to be Awarded",
+      confirmTransaction: "Confirm Transaction",
+      areYouSure: "Are you sure you want to record these items?",
+      cancel: "Cancel",
+      confirmSubmit: "Confirm & Submit",
+      quantity: "Quantity",
+      weight: "Weight (kg)",
+      enterWeight: "Enter weight"
+    },
+    common: {
+      loading: "Loading...",
+      error: "Error",
+      success: "Success",
+      confirm: "Confirm",
+      cancel: "Cancel",
+      save: "Save",
+      delete: "Delete",
+      edit: "Edit",
+      view: "View",
+      close: "Close",
+      back: "Back",
+      next: "Next",
+      submit: "Submit",
+      search: "Search",
+      clear: "Clear",
+      total: "Total",
+      date: "Date",
+      actions: "Actions"
     }
   },
   zh: {
@@ -48,7 +253,14 @@ export const translations = {
       home: "主页",
       learn: "学习与回收",
       login: "登录",
-      register: "注册"
+      register: "注册",
+      profile: "个人资料",
+      transaction: "交易",
+      report: "报告",
+      adminPanel: "管理面板",
+      users: "用户",
+      vouchers: "优惠券",
+      items: "物品"
     },
     hero: {
       badge: "WasteNot · 更好的回收",
@@ -61,6 +273,46 @@ export const translations = {
     items: {
       title: "接受的回收物品",
       description: "WasteNot 回收中心接受以下五种可回收物品："
+    },
+    auth: {
+      login: {
+        title: "登录您的账户",
+        subtitle: "欢迎回到 WasteNot",
+        email: "电子邮件地址",
+        password: "密码",
+        showPassword: "显示密码",
+        hidePassword: "隐藏密码",
+        signIn: "登录",
+        signingIn: "登录中...",
+        forgotPassword: "忘记密码？",
+        noAccount: "没有账户？",
+        signUp: "注册",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "输入您的密码",
+        rememberMe: "记住我"
+      },
+      register: {
+        title: "创建账户",
+        subtitle: "注册 WasteNot 账户",
+        roleLabel: "我注册为：",
+        recycler: "回收者（普通用户）",
+        centreStaff: "回收中心",
+        centreName: "回收中心名称",
+        fullName: "全名",
+        email: "电子邮件地址",
+        password: "密码",
+        confirmPassword: "确认密码",
+        createAccount: "创建账户",
+        creatingAccount: "创建账户中...",
+        haveAccount: "已有账户？",
+        signIn: "登录",
+        centreNamePlaceholder: "输入您的回收中心名称",
+        fullNamePlaceholder: "您的全名",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "选择一个密码",
+        confirmPasswordPlaceholder: "确认密码",
+        accountCreated: "账户创建成功！"
+      }
     },
     profile: {
       overview: "概览",
@@ -85,6 +337,164 @@ export const translations = {
       totalRecycled: "回收总量",
       transactions: "交易",
       noTransactions: "找不到交易。开始回收以构建您的历史记录！"
+    },
+    dashboard: {
+      welcomeBack: "欢迎回来",
+      hello: "你好",
+      trackProgress: "追踪您的回收进度并管理您的账户",
+      memberId: "会员ID",
+      showIdAtCentres: "在回收中心出示此ID",
+      copyId: "复制ID",
+      quickStats: "快速统计",
+      itemsRecycled: "已回收物品",
+      pointsEarned: "获得积分",
+      collectionVisits: "回收访问次数",
+      loadingStats: "加载统计中...",
+      loading: "加载中...",
+      findNearestCenters: "查找最近的回收中心",
+      nearestCollectionCentres: "最近的回收中心",
+      away: "远",
+      getDirections: "获取路线",
+      hideCentres: "隐藏中心",
+      locatingCentres: "定位中心中...",
+      viewProfile: "查看个人资料"
+    },
+    centreStaff: {
+      findRecycler: "查找回收者",
+      searchByMemberCode: "通过会员代码搜索回收者",
+      memberCode: "会员代码",
+      enterMemberCode: "输入会员代码",
+      search: "搜索",
+      searching: "搜索中...",
+      clickToRecord: "点击记录回收 →",
+      pleaseEnterCode: "请输入会员代码"
+    },
+    steps: {
+      title: "WasteNot 如何运作",
+      subtitle: "按照这些步骤开始回收、赚取积分和兑换奖励。",
+      step1: {
+        label: "注册账户",
+        detail: "用户使用有效的电子邮件和密码在 WasteNot 网站上创建账户。"
+      },
+      step2: {
+        label: "将可回收物品带到回收中心",
+        detail: "用户将接受的可回收物品带到 WasteNot 回收中心。"
+      },
+      step3: {
+        label: "向工作人员提供会员代码",
+        detail: "用户向回收中心工作人员出示 WasteNot 会员代码以进行识别。"
+      },
+      step4: {
+        label: "工作人员记录回收物品",
+        detail: "回收中心工作人员计算并在系统中记录用户的回收物品数量。"
+      },
+      step5: {
+        label: "赚取奖励积分",
+        detail: "每次回收活动都会自动获得奖励积分，可用于兑换可用的优惠券。"
+      }
+    },
+    cta: {
+      badge: "加入运动",
+      title: "今天开始更智能地回收",
+      description: "设置您的位置，获取自定义提示，并保持社区绿色。",
+      createAccount: "创建账户",
+      learnMore: "了解更多"
+    },
+    footer: {
+      tagline: "WasteNot · 简化回收",
+      by: "由 CodeZap 提供"
+    },
+    transactions: {
+      title: "交易",
+      subtitle: "查看回收交易和总计",
+      filterByRecycler: "按回收者筛选",
+      memberCode: "会员代码",
+      enterMemberCode: "输入会员代码",
+      search: "搜索",
+      searching: "搜索中...",
+      clear: "清除",
+      selected: "已选择",
+      totalRecycledBy: "回收总量由",
+      perItem: "（按物品）",
+      noTransactions: "此回收者没有交易",
+      viewAllTransactions: "查看所有交易",
+      deleteMode: "删除模式",
+      cancelDelete: "取消删除",
+      deleteSelected: "删除所选",
+      deleting: "删除中...",
+      editTransaction: "编辑交易",
+      editing: "编辑中",
+      transactionHistory: "交易历史",
+      noTransactionsFound: "找不到交易",
+      recycler: "回收者",
+      itemsRecycled: "已回收物品",
+      date: "日期",
+      actions: "操作",
+      edit: "编辑",
+      delete: "删除",
+      updateQuantities: "更新数量",
+      updating: "更新中...",
+      cancel: "取消",
+      units: "单位"
+    },
+    reports: {
+      title: "报告",
+      monthlySubtitle: "收集摘要",
+      annualSubtitle: "今年的收集摘要",
+      monthly: "每月",
+      annual: "年度",
+      totalItemsCollected: "收集的物品总数",
+      selectedMonth: "选定月份",
+      thisYear: "今年",
+      uniqueRecyclers: "独特回收者",
+      totalSessions: "总会话",
+      topCollectedItem: "收集最多的物品",
+      mostRecycledPlasticsMetal: "最多回收（塑料/金属）",
+      newspaperCollected: "收集的报纸",
+      cardboardCollected: "收集的纸板",
+      loadingReport: "加载月度报告中...",
+      reportError: "报告错误"
+    },
+    recycle: {
+      recordRecycling: "记录回收",
+      memberCode: "会员代码",
+      back: "返回",
+      goBack: "返回",
+      loading: "加载中...",
+      error: "错误",
+      confirmAndSubmit: "确认并提交",
+      submitting: "提交中...",
+      reviewRecyclingItems: "查看回收物品",
+      recycler: "回收者",
+      itemsToBeRecorded: "要记录的物品",
+      totalPointsToBeAwarded: "将获得的总积分",
+      confirmTransaction: "确认交易",
+      areYouSure: "您确定要记录这些物品吗？",
+      cancel: "取消",
+      confirmSubmit: "确认并提交",
+      quantity: "数量",
+      weight: "重量（公斤）",
+      enterWeight: "输入重量"
+    },
+    common: {
+      loading: "加载中...",
+      error: "错误",
+      success: "成功",
+      confirm: "确认",
+      cancel: "取消",
+      save: "保存",
+      delete: "删除",
+      edit: "编辑",
+      view: "查看",
+      close: "关闭",
+      back: "返回",
+      next: "下一步",
+      submit: "提交",
+      search: "搜索",
+      clear: "清除",
+      total: "总计",
+      date: "日期",
+      actions: "操作"
     }
   },
   ms: {
@@ -92,7 +502,14 @@ export const translations = {
       home: "Laman Utama",
       learn: "Belajar & Kitar Semula",
       login: "Log Masuk",
-      register: "Daftar"
+      register: "Daftar",
+      profile: "Profil",
+      transaction: "Transaksi",
+      report: "Laporan",
+      adminPanel: "Panel Admin",
+      users: "Pengguna",
+      vouchers: "Baucar",
+      items: "Item"
     },
     hero: {
       badge: "WasteNot · Kitar Semula Lebih Baik",
@@ -105,6 +522,46 @@ export const translations = {
     items: {
       title: "Barang Kitar Semula Diterima",
       description: "WasteNot menerima lima jenis barang kitar semula di pusat pengumpulan kami:"
+    },
+    auth: {
+      login: {
+        title: "Log masuk ke akaun anda",
+        subtitle: "Selamat kembali ke WasteNot",
+        email: "Alamat e-mel",
+        password: "Kata laluan",
+        showPassword: "Tunjukkan kata laluan",
+        hidePassword: "Sembunyikan kata laluan",
+        signIn: "Log masuk",
+        signingIn: "Memasuki...",
+        forgotPassword: "Terlupa kata laluan?",
+        noAccount: "Tiada akaun?",
+        signUp: "Daftar",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "Masukkan kata laluan anda",
+        rememberMe: "Ingat saya"
+      },
+      register: {
+        title: "Buat akaun",
+        subtitle: "Daftar untuk akaun WasteNot",
+        roleLabel: "Saya mendaftar sebagai:",
+        recycler: "Pengitar Semula (Pengguna Biasa)",
+        centreStaff: "Pusat Pengumpulan",
+        centreName: "Nama Pusat Pengumpulan",
+        fullName: "Nama lengkap",
+        email: "Alamat e-mel",
+        password: "Kata laluan",
+        confirmPassword: "Sahkan kata laluan",
+        createAccount: "Buat akaun",
+        creatingAccount: "Membuat akaun...",
+        haveAccount: "Sudah mempunyai akaun?",
+        signIn: "Log masuk",
+        centreNamePlaceholder: "Masukkan nama pusat pengumpulan anda",
+        fullNamePlaceholder: "Nama lengkap anda",
+        emailPlaceholder: "you@example.com",
+        passwordPlaceholder: "Pilih kata laluan",
+        confirmPasswordPlaceholder: "Sahkan kata laluan",
+        accountCreated: "Akaun berjaya dibuat!"
+      }
     },
     profile: {
       overview: "Gambaran Keseluruhan",
@@ -129,6 +586,164 @@ export const translations = {
       totalRecycled: "Jumlah Dikitar Semula",
       transactions: "Transaksi",
       noTransactions: "Tiada transaksi dijumpai. Mulai kitar semula untuk membina sejarah anda!"
+    },
+    dashboard: {
+      welcomeBack: "Selamat kembali",
+      hello: "Helo",
+      trackProgress: "Jejak kemajuan kitar semula anda dan urus akaun anda",
+      memberId: "ID Ahli",
+      showIdAtCentres: "Tunjukkan ID ini di pusat pengumpulan",
+      copyId: "Salin ID",
+      quickStats: "Statistik Pantas",
+      itemsRecycled: "Item Dikitar Semula",
+      pointsEarned: "Mata Diperoleh",
+      collectionVisits: "Lawatan Pengumpulan",
+      loadingStats: "Memuatkan statistik...",
+      loading: "Memuatkan...",
+      findNearestCenters: "Cari Pusat Pengumpulan Terdekat",
+      nearestCollectionCentres: "Pusat Pengumpulan Terdekat",
+      away: "jauhnya",
+      getDirections: "Dapatkan Arah",
+      hideCentres: "Sembunyikan Pusat",
+      locatingCentres: "Mencari lokasi pusat...",
+      viewProfile: "Lihat Profil"
+    },
+    centreStaff: {
+      findRecycler: "Cari Pengitar Semula",
+      searchByMemberCode: "Cari pengitar semula mengikut kod ahli",
+      memberCode: "Kod Ahli",
+      enterMemberCode: "Masukkan kod ahli",
+      search: "Cari",
+      searching: "Mencari...",
+      clickToRecord: "Klik untuk merekod kitar semula →",
+      pleaseEnterCode: "Sila masukkan kod ahli"
+    },
+    steps: {
+      title: "Cara WasteNot Berfungsi",
+      subtitle: "Ikuti langkah-langkah ini untuk mula kitar semula, meraih mata, dan menebus ganjaran.",
+      step1: {
+        label: "Daftar Akaun",
+        detail: "Pengguna membuat akaun di laman web WasteNot menggunakan e-mel dan kata laluan yang sah."
+      },
+      step2: {
+        label: "Bawa Barang Kitar Semula ke Pusat Pengumpulan",
+        detail: "Pengguna membawa barang kitar semula yang diterima ke pusat pengumpulan kitar semula WasteNot."
+      },
+      step3: {
+        label: "Berikan Kod Ahli kepada Kakitangan",
+        detail: "Pengguna menunjukkan Kod Ahli WasteNot mereka kepada kakitangan pusat pengumpulan untuk pengenalan."
+      },
+      step4: {
+        label: "Kakitangan Merekod Barang Dikitar Semula",
+        detail: "Kakitangan pusat pengumpulan mengira dan merekod kuantiti barang dikitar semula untuk pengguna dalam sistem."
+      },
+      step5: {
+        label: "Raih Mata Ganjaran",
+        detail: "Mata ganjaran diberikan secara automatik untuk setiap aktiviti kitar semula dan boleh digunakan untuk menebus baucar yang tersedia."
+      }
+    },
+    cta: {
+      badge: "Sertai gerakan",
+      title: "Mulai kitar semula dengan lebih bijak hari ini",
+      description: "Tetapkan lokasi anda, dapatkan petua tersuai, dan pastikan komuniti anda hijau.",
+      createAccount: "Buat akaun",
+      learnMore: "Ketahui lebih lanjut"
+    },
+    footer: {
+      tagline: "WasteNot · Kitar semula dipermudahkan",
+      by: "Oleh CodeZap"
+    },
+    transactions: {
+      title: "Transaksi",
+      subtitle: "Lihat transaksi dan jumlah kitar semula",
+      filterByRecycler: "Tapis mengikut Pengitar Semula",
+      memberCode: "Kod Ahli",
+      enterMemberCode: "Masukkan kod ahli",
+      search: "Cari",
+      searching: "Mencari...",
+      clear: "Kosongkan",
+      selected: "Dipilih",
+      totalRecycledBy: "Jumlah Dikitar Semula oleh",
+      perItem: "(Setiap Item)",
+      noTransactions: "Tiada transaksi untuk pengitar semula ini",
+      viewAllTransactions: "Lihat Semua Transaksi",
+      deleteMode: "Mod Padam",
+      cancelDelete: "Batal Padam",
+      deleteSelected: "Padam Dipilih",
+      deleting: "Memadam...",
+      editTransaction: "Edit Transaksi",
+      editing: "Mengedit",
+      transactionHistory: "Sejarah Transaksi",
+      noTransactionsFound: "Tiada transaksi dijumpai",
+      recycler: "Pengitar Semula",
+      itemsRecycled: "Item Dikitar Semula",
+      date: "Tarikh",
+      actions: "Tindakan",
+      edit: "Edit",
+      delete: "Padam",
+      updateQuantities: "Kemas kini Kuantiti",
+      updating: "Mengemaskini...",
+      cancel: "Batal",
+      units: "unit"
+    },
+    reports: {
+      title: "Laporan",
+      monthlySubtitle: "Ringkasan pengumpulan untuk",
+      annualSubtitle: "Ringkasan pengumpulan tahun ini",
+      monthly: "Bulanan",
+      annual: "Tahunan",
+      totalItemsCollected: "Jumlah Item Dikumpul",
+      selectedMonth: "Bulan Dipilih",
+      thisYear: "Tahun Ini",
+      uniqueRecyclers: "Pengitar Semula Unik",
+      totalSessions: "Jumlah Sesi",
+      topCollectedItem: "Item Paling Banyak Dikumpul",
+      mostRecycledPlasticsMetal: "Paling Banyak Dikitar Semula (Plastik/Logam)",
+      newspaperCollected: "Akhbar Dikumpul",
+      cardboardCollected: "Kadbod Dikumpul",
+      loadingReport: "Memuatkan laporan bulanan...",
+      reportError: "Ralat Laporan"
+    },
+    recycle: {
+      recordRecycling: "Rekod Kitar Semula",
+      memberCode: "Kod Ahli",
+      back: "Kembali",
+      goBack: "Kembali",
+      loading: "Memuatkan...",
+      error: "Ralat",
+      confirmAndSubmit: "Sahkan dan Hantar",
+      submitting: "Menghantar...",
+      reviewRecyclingItems: "Semak Item Kitar Semula",
+      recycler: "Pengitar Semula",
+      itemsToBeRecorded: "Item untuk Direkod",
+      totalPointsToBeAwarded: "Jumlah Mata yang Akan Diberikan",
+      confirmTransaction: "Sahkan Transaksi",
+      areYouSure: "Adakah anda pasti mahu merekod item ini?",
+      cancel: "Batal",
+      confirmSubmit: "Sahkan & Hantar",
+      quantity: "Kuantiti",
+      weight: "Berat (kg)",
+      enterWeight: "Masukkan berat"
+    },
+    common: {
+      loading: "Memuatkan...",
+      error: "Ralat",
+      success: "Berjaya",
+      confirm: "Sahkan",
+      cancel: "Batal",
+      save: "Simpan",
+      delete: "Padam",
+      edit: "Edit",
+      view: "Lihat",
+      close: "Tutup",
+      back: "Kembali",
+      next: "Seterusnya",
+      submit: "Hantar",
+      search: "Cari",
+      clear: "Kosongkan",
+      total: "Jumlah",
+      date: "Tarikh",
+      actions: "Tindakan"
     }
   }
 };

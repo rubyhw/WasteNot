@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts';
+import { useLanguage } from '../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 
 export default function TransactionsPage() {
   const router = useRouter();
   const { user, isCentreStaff, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [transactions, setTransactions] = useState([]);
   const [centreTotals, setCentreTotals] = useState({});
   const [recyclerTotals, setRecyclerTotals] = useState(null);
@@ -321,7 +323,7 @@ export default function TransactionsPage() {
   if (authLoading || !user || !isCentreStaff) {
     return (
       <main className="page">
-        <div className="loading">Loading...</div>
+        <div className="loading">{t('common.loading')}</div>
       </main>
     );
   }
@@ -329,24 +331,24 @@ export default function TransactionsPage() {
   return (
     <main className="page">
       <div className="page-header">
-        <h1>Transactions</h1>
-        <p className="lede">View recycling transactions and totals</p>
+        <h1>{t('transactions.title')}</h1>
+        <p className="lede">{t('transactions.subtitle')}</p>
       </div>
 
       {/* Recycler Search */}
       <div className="recycler-search-section" style={{ marginBottom: '32px', padding: '20px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-        <h3 style={{ marginBottom: '16px' }}>Filter by Recycler</h3>
+        <h3 style={{ marginBottom: '16px' }}>{t('transactions.filterByRecycler')}</h3>
         <form onSubmit={handleRecyclerSearch} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
             <label htmlFor="recyclerSearch" style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
-              Member Code
+              {t('transactions.memberCode')}
             </label>
             <input
               id="recyclerSearch"
               type="text"
               value={recyclerSearch}
               onChange={(e) => setRecyclerSearch(e.target.value)}
-              placeholder="Enter member code"
+              placeholder={t('transactions.enterMemberCode')}
               className="form-input"
               disabled={searchingRecycler}
             />
@@ -356,7 +358,7 @@ export default function TransactionsPage() {
             className="btn primary"
             disabled={searchingRecycler}
           >
-            {searchingRecycler ? 'Searching...' : 'Search'}
+            {searchingRecycler ? t('transactions.searching') : t('transactions.search')}
           </button>
           {selectedRecycler && (
             <button
@@ -364,13 +366,13 @@ export default function TransactionsPage() {
               onClick={clearRecyclerFilter}
               className="btn ghost"
             >
-              Clear
+              {t('transactions.clear')}
             </button>
           )}
         </form>
         {selectedRecycler && (
           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(35, 164, 85, 0.1)', borderRadius: '8px' }}>
-            <strong>Selected:</strong> {selectedRecycler.full_name} ({selectedRecycler.public_id})
+            <strong>{t('transactions.selected')}:</strong> {selectedRecycler.full_name} ({selectedRecycler.public_id})
           </div>
         )}
       </div>
@@ -381,10 +383,10 @@ export default function TransactionsPage() {
         {selectedRecycler && recyclerTotals && (
           <div className="totals-card" style={{ padding: '20px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
             <h3 style={{ marginBottom: '16px', color: 'var(--primary)' }}>
-              Total Recycled by {selectedRecycler.full_name} (Per Item)
+              {t('transactions.totalRecycledBy')} {selectedRecycler.full_name} {t('transactions.perItem')}
             </h3>
             {Object.keys(recyclerTotals).length === 0 ? (
-              <p style={{ color: 'var(--muted)' }}>No transactions for this recycler</p>
+              <p style={{ color: 'var(--muted)' }}>{t('transactions.noTransactions')}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {Object.entries(recyclerTotals).map(([itemName, total]) => (
@@ -444,10 +446,10 @@ export default function TransactionsPage() {
           </div>
         </div>
         {loading ? (
-          <div className="loading">Loading transactions...</div>
+          <div className="loading">{t('common.loading')}</div>
         ) : sessionList.length === 0 ? (
           <div className="empty-state">
-            <p>No transactions found</p>
+            <p>{t('transactions.noTransactionsFound')}</p>
           </div>
         ) : (
           <div className="transactions-list">
@@ -494,7 +496,7 @@ export default function TransactionsPage() {
                       onClick={() => openEditModal(session)}
                       disabled={deleteSubmitting}
                     >
-                      Edit
+                      {t('transactions.edit')}
                     </button>
                   </div>
                 </div>

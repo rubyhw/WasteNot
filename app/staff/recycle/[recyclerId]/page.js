@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '../../../contexts';
+import { useLanguage } from '../../../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from '../../../config/recyclableItems';
 
@@ -12,6 +13,7 @@ export default function RecyclePage() {
   const router = useRouter();
   const recyclerId = params.recyclerId;
   const { user, isCentreStaff, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [recycler, setRecycler] = useState(null);
   const [quantities, setQuantities] = useState({});
@@ -180,7 +182,7 @@ export default function RecyclePage() {
       <main className="page">
         <div className="container">
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <p>Loading...</p>
+            <p>{t('recycle.loading')}</p>
           </div>
         </div>
       </main>
@@ -192,10 +194,10 @@ export default function RecyclePage() {
       <main className="page">
         <div className="container">
           <div className="error-card">
-            <h2>Error</h2>
+            <h2>{t('recycle.error')}</h2>
             <p>{error}</p>
             <button onClick={() => router.push('/')} className="btn primary">
-              Go Back
+              {t('recycle.goBack')}
             </button>
           </div>
         </div>
@@ -212,12 +214,12 @@ export default function RecyclePage() {
       <div className="container">
         <div className="recycling-header">
           <button onClick={() => router.push('/')} className="back-btn">
-            ← Back
+            ← {t('recycle.back')}
           </button>
           <div className="recycler-info-header">
-            <h1>Record Recycling</h1>
+            <h1>{t('recycle.recordRecycling')}</h1>
             <div className="recycler-name">{recycler.full_name || 'N/A'}</div>
-            <div className="member-code">Member Code: {recycler.public_id}</div>
+            <div className="member-code">{t('recycle.memberCode')}: {recycler.public_id}</div>
           </div>
         </div>
 

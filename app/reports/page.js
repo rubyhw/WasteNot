@@ -3,12 +3,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts';
+import { useLanguage } from '../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 
 export default function ReportsPage() {
   const router = useRouter();
   const { user, isCentreStaff, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -198,7 +200,7 @@ export default function ReportsPage() {
   if (authLoading || !user || !isCentreStaff) {
     return (
       <main className="page">
-        <div className="loading">Loading...</div>
+        <div className="loading">{t('common.loading')}</div>
       </main>
     );
   }
@@ -206,7 +208,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <main className="page">
-        <div className="loading">Loading monthly report...</div>
+        <div className="loading">{t('reports.loadingReport')}</div>
       </main>
     );
   }
@@ -215,7 +217,7 @@ export default function ReportsPage() {
     return (
       <main className="page">
         <div className="error-card">
-          <h2>Report Error</h2>
+          <h2>{t('reports.reportError')}</h2>
           <p>{error}</p>
         </div>
       </main>
@@ -225,15 +227,15 @@ export default function ReportsPage() {
   return (
     <main className="page">
       <div className="page-header">
-        <h1>Report</h1>
+        <h1>{t('reports.title')}</h1>
         <p className="lede">
           {viewMode === 'month'
-            ? `Collection summary for ${new Date(
+            ? `${t('reports.monthlySubtitle')} ${new Date(
                 new Date().getFullYear(),
                 selectedMonth - 1,
                 1
               ).toLocaleString('default', { month: 'long' })}`
-            : 'This yearʼs collection summary'}
+            : t('reports.annualSubtitle')}
         </p>
       </div>
 
@@ -243,13 +245,13 @@ export default function ReportsPage() {
           className={`range-btn ${viewMode === 'month' ? 'active' : ''}`}
           onClick={() => setViewMode('month')}
         >
-          Monthly
+          {t('reports.monthly')}
         </button>
         <button
           className={`range-btn ${viewMode === 'year' ? 'active' : ''}`}
           onClick={() => setViewMode('year')}
         >
-          Annual
+          {t('reports.annual')}
         </button>
       </div>
       {viewMode === 'month' && (
@@ -295,8 +297,8 @@ export default function ReportsPage() {
             )}
           </div>
           <div className="impact-label">
-            Total Items Collected (
-            {viewMode === 'month' ? 'Selected Month' : 'This Year'})
+            {t('reports.totalItemsCollected')} (
+            {viewMode === 'month' ? t('reports.selectedMonth') : t('reports.thisYear')})
           </div>
         </div>
         <div className="impact-card">

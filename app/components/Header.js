@@ -5,40 +5,42 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../contexts';
+import { useLanguage } from '../contexts/LanguageContexts';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const { user, profile, signOut, isCentreStaff, role, loading } = useAuth();
+  const { t } = useLanguage();
 
   // Base navigation items
   const baseNavItems = [
-    { label: 'Home', href: role === 'admin' ? '/admin' : '/' },
+    { label: t('nav.home'), href: role === 'admin' ? '/admin' : '/' },
   ];
 
   // Admin-specific navigation
   const adminNavItems = role === 'admin'
     ? [
-        { label: 'Admin Panel', href: '/admin' },
-        { label: 'Users', href: '/admin/users' },
-        { label: 'Vouchers', href: '/admin/vouchers' },
-        { label: 'Items', href: '/admin/items' },
+        { label: t('nav.adminPanel'), href: '/admin' },
+        { label: t('nav.users'), href: '/admin/users' },
+        { label: t('nav.vouchers'), href: '/admin/vouchers' },
+        { label: t('nav.items'), href: '/admin/items' },
       ]
     : [];
 
   // Only show Transaction and Report for centre_staff
   const centreStaffNavItems = isCentreStaff
     ? [
-        { label: 'Home', href: '/' },
-        { label: 'Transaction', href: '/transactions' },
-        { label: 'Report', href: '/reports' },
+        { label: t('nav.home'), href: '/' },
+        { label: t('nav.transaction'), href: '/transactions' },
+        { label: t('nav.report'), href: '/reports' },
       ]
     : [];
 
   // Show Profile for regular authenticated users
   const userNavItems = user && !isCentreStaff && role !== 'admin'
     ? [
-        { label: 'Profile', href: '/profile' },
+        { label: t('nav.profile'), href: '/profile' },
       ]
     : [];
 
@@ -108,14 +110,14 @@ export default function Header() {
                   )}
                 </div>
                 <button onClick={signOut} className="btn-login">
-                  Logout
+                  {t('profile.signOut')}
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className="btn-login">Login</Link>
+                <Link href="/login" className="btn-login">{t('nav.login')}</Link>
                 {pathname !== '/register' && (
-                  <Link href="/register" className="btn-register">Register</Link>
+                  <Link href="/register" className="btn-register">{t('nav.register')}</Link>
                 )}
               </>
             )}

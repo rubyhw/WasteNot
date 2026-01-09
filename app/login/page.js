@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '../contexts/LanguageContexts';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,8 +70,8 @@ export default function LoginPage() {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>Welcome back</h1>
-            <p className="auth-subtitle">Sign in to your WasteNot account</p>
+            <h1>{t('auth.login.title')}</h1>
+            <p className="auth-subtitle">{t('auth.login.subtitle')}</p>
           </div>
 
           {error && (
@@ -81,13 +83,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email">Email address</label>
+              <label htmlFor="email">{t('auth.login.email')}</label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 required
                 disabled={loading}
                 className="form-input"
@@ -95,14 +97,14 @@ export default function LoginPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('auth.login.password')}</label>
               <div className="password-input-wrapper">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   required
                   disabled={loading}
                   className="form-input"
@@ -112,7 +114,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle"
                   disabled={loading}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
@@ -122,10 +124,10 @@ export default function LoginPage() {
             <div className="form-options">
               <label className="checkbox-label">
                 <input type="checkbox" />
-                <span>Remember me</span>
+                <span>{t('auth.login.rememberMe')}</span>
               </label>
               <Link href="/forgot-password" className="forgot-link">
-                Forgot password?
+                {t('auth.login.forgotPassword')}
               </Link>
             </div>
 
@@ -137,19 +139,19 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <span className="spinner-small"></span>
-                  Signing in...
+                  {t('auth.login.signingIn')}
                 </>
               ) : (
-                'Sign in'
+                t('auth.login.signIn')
               )}
             </button>
           </form>
 
           <div className="auth-footer">
             <p>
-              Don&apos;t have an account?{' '}
+              {t('auth.login.noAccount')}{' '}
               <Link href="/register" className="auth-link">
-                Sign up
+                {t('auth.login.signUp')}
               </Link>
             </p>
           </div>

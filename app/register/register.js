@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useLanguage } from '../contexts/LanguageContexts'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { t } = useLanguage()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -124,7 +126,7 @@ export default function RegisterPage() {
             
             // Registration successful - user is automatically logged in
             // Show success message and redirect to home page
-            setMessage('Account successfully created!')
+            setMessage(t('auth.register.accountCreated'))
             
             // Wait for auth context to update, then redirect
             setTimeout(() => {
@@ -156,8 +158,8 @@ export default function RegisterPage() {
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <h1>Create an account</h1>
-            <p className="auth-subtitle">Sign up for a WasteNot account</p>
+            <h1>{t('auth.register.title')}</h1>
+            <p className="auth-subtitle">{t('auth.register.subtitle')}</p>
           </div>
 
           {error && (
@@ -177,7 +179,7 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister} className="auth-form">
             {/* Role Selection */}
             <div className="form-group">
-              <label>I am registering as:</label>
+              <label>{t('auth.register.roleLabel')}</label>
               <div className="role-selection">
                 <label className="role-option">
                   <input
@@ -188,7 +190,7 @@ export default function RegisterPage() {
                     onChange={(e) => setRole(e.target.value)}
                     disabled={loading}
                   />
-                  <span>Recycler (Normal User)</span>
+                  <span>{t('auth.register.recycler')}</span>
                 </label>
                 <label className="role-option">
                   <input
@@ -199,48 +201,48 @@ export default function RegisterPage() {
                     onChange={(e) => setRole(e.target.value)}
                     disabled={loading}
                   />
-                  <span>Collection Centre</span>
+                  <span>{t('auth.register.centreStaff')}</span>
                 </label>
               </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="name">
-                {role === 'centre_staff' ? 'Collection Centre Name' : 'Full name'}
+                {role === 'centre_staff' ? t('auth.register.centreName') : t('auth.register.fullName')}
               </label>
               <input
                 id="name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={role === 'centre_staff' ? 'Enter your collection centre name' : 'Your full name'}
+                placeholder={role === 'centre_staff' ? t('auth.register.centreNamePlaceholder') : t('auth.register.fullNamePlaceholder')}
                 disabled={loading}
                 className="form-input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">Email address</label>
+              <label htmlFor="email">{t('auth.register.email')}</label>
               <input
                 id="email"
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder={t('auth.register.emailPlaceholder')}
                 disabled={loading}
                 className="form-input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('auth.register.password')}</label>
               <div className="password-input-wrapper">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Choose a password"
+                  placeholder={t('auth.register.passwordPlaceholder')}
                   required
                   disabled={loading}
                   className="form-input"
@@ -250,7 +252,7 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="password-toggle"
                   disabled={loading}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
@@ -258,13 +260,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirm">Confirm password</label>
+              <label htmlFor="confirm">{t('auth.register.confirmPassword')}</label>
               <input
                 id="confirm"
                 type={showPassword ? 'text' : 'password'}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Confirm password"
+                placeholder={t('auth.register.confirmPasswordPlaceholder')}
                 required
                 disabled={loading}
                 className="form-input"
@@ -275,19 +277,19 @@ export default function RegisterPage() {
               {loading ? (
                 <>
                   <span className="spinner-small"></span>
-                  Creating account...
+                  {t('auth.register.creatingAccount')}
                 </>
               ) : (
-                'Create account'
+                t('auth.register.createAccount')
               )}
             </button>
           </form>
 
           <div className="auth-footer">
             <p>
-              Already have an account?{' '}
+              {t('auth.register.haveAccount')}{' '}
               <Link href="/login" className="auth-link">
-                Sign in
+                {t('auth.register.signIn')}
               </Link>
             </p>
           </div>

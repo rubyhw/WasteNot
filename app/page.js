@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './contexts';
+import { useLanguage } from './contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
 import { RECYCLABLE_ITEMS } from './config/recyclableItems';
 
@@ -85,6 +86,7 @@ const stats = [
 export default function Home() {
   const router = useRouter();
   const { isCentreStaff, user, profile, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [memberCode, setMemberCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -121,7 +123,7 @@ export default function Home() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!memberCode.trim()) {
-      setError('Please enter a member code');
+      setError(t('centreStaff.pleaseEnterCode'));
       return;
     }
 
@@ -341,9 +343,9 @@ export default function Home() {
       {isRecycler && (
         <section className="recycler-dashboard">
           <div className="page-header">
-            <div className="badge">Welcome back</div>
-            <h1>Hello, {profile?.full_name || user?.email}!</h1>
-            <p className="lede">Track your recycling progress and manage your account</p>
+            <div className="badge">{t('dashboard.welcomeBack')}</div>
+            <h1>{t('dashboard.hello')}, {profile?.full_name || user?.email}!</h1>
+            <p className="lede">{t('dashboard.trackProgress')}</p>
           </div>
 
           <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' }}>
@@ -351,20 +353,20 @@ export default function Home() {
             <div className="member-id-card" style={{ padding: '24px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '24px' }}>🆔</div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Member ID</h3>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{t('dashboard.memberId')}</h3>
               </div>
               <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--primary)', marginBottom: '8px', fontFamily: 'monospace' }}>
-                {profile?.public_id || 'Loading...'}
+                {profile?.public_id || t('dashboard.loading')}
               </div>
               <p style={{ margin: 0, fontSize: '14px', color: 'var(--muted)' }}>
-                Show this ID at collection centres
+                {t('dashboard.showIdAtCentres')}
               </p>
               <button
                 className="btn secondary small"
                 style={{ marginTop: '12px', width: '100%' }}
                 onClick={() => navigator.clipboard.writeText(profile?.public_id || '')}
               >
-                Copy ID
+                {t('dashboard.copyId')}
               </button>
             </div>
 
@@ -372,29 +374,29 @@ export default function Home() {
             <div className="stats-card" style={{ padding: '24px', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '24px' }}>📊</div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Quick Stats</h3>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>{t('dashboard.quickStats')}</h3>
               </div>
               {loadingStats ? (
-                <p style={{ color: 'var(--muted)' }}>Loading stats...</p>
+                <p style={{ color: 'var(--muted)' }}>{t('dashboard.loadingStats')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
                       {recyclerStats.totalRecycled}
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Items Recycled</div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>{t('dashboard.itemsRecycled')}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
                       {recyclerStats.totalPoints}
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Points Earned</div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>{t('dashboard.pointsEarned')}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
                       {recyclerStats.visits}
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>Collection Visits</div>
+                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>{t('dashboard.collectionVisits')}</div>
                   </div>
                 </div>
               )}
@@ -409,7 +411,7 @@ export default function Home() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <Link href="/profile">
                   <button className="btn primary" style={{ width: '100%' }}>
-                    View Profile
+                    {t('dashboard.viewProfile')}
                   </button>
                 </Link>
                 <button
@@ -418,7 +420,7 @@ export default function Home() {
                   onClick={findNearestCenters}
                   disabled={locationLoading}
                 >
-                  {locationLoading ? 'Finding...' : 'Find Collection Centres'}
+                  {locationLoading ? t('dashboard.locatingCentres') : t('dashboard.findNearestCenters')}
                 </button>
               </div>
             </div>
@@ -441,7 +443,7 @@ export default function Home() {
                       <div style={{ fontSize: '24px' }}>🏭</div>
                       <div>
                         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{center.name}</h3>
-                        <div style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 500 }}>{center.distance} away</div>
+                        <div style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: 500 }}>{center.distance} {t('dashboard.away')}</div>
                       </div>
                     </div>
                     <div style={{ marginBottom: '12px' }}>
@@ -457,7 +459,7 @@ export default function Home() {
                         window.open(url, '_blank');
                       }}
                     >
-                      Get Directions
+                      {t('dashboard.getDirections')}
                     </button>
                   </div>
                 ))}
@@ -467,7 +469,7 @@ export default function Home() {
                   className="btn ghost small"
                   onClick={() => setShowCenters(false)}
                 >
-                  Hide Centres
+                  {t('dashboard.hideCentres')}
                 </button>
               </div>
             </section>
@@ -475,9 +477,9 @@ export default function Home() {
 
           {/* Accepted Items */}
           <section className="accepted-section">
-            <h2>Recyclable Items Accepted</h2>
+            <h2>{t('items.title')}</h2>
             <p className="lede">
-              WasteNot accepts five types of recyclable items at our collection centres:
+              {t('items.description')}
             </p>
             <div className="accepted-grid">
               {RECYCLABLE_ITEMS.map((item) => (
@@ -505,18 +507,18 @@ export default function Home() {
       {!authLoading && isCentreStaff && (
         <section className="find-recycler-section">
           <div className="find-recycler-card">
-            <h2>Find Recycler</h2>
-            <p className="section-subtitle">Search for a recycler by member code</p>
+            <h2>{t('centreStaff.findRecycler')}</h2>
+            <p className="section-subtitle">{t('centreStaff.searchByMemberCode')}</p>
 
             <form onSubmit={handleSearch} className="find-recycler-form">
               <div className="form-group">
-                <label htmlFor="memberCode">Member Code</label>
+                <label htmlFor="memberCode">{t('centreStaff.memberCode')}</label>
                 <input
                   id="memberCode"
                   type="text"
                   value={memberCode}
                   onChange={(e) => setMemberCode(e.target.value)}
-                  placeholder="Enter member code"
+                  placeholder={t('centreStaff.enterMemberCode')}
                   required
                   disabled={loading}
                   className="form-input"
@@ -527,7 +529,7 @@ export default function Home() {
                 disabled={loading}
                 className="btn primary"
               >
-                {loading ? 'Searching...' : 'Search'}
+                {loading ? t('centreStaff.searching') : t('centreStaff.search')}
               </button>
             </form>
 
@@ -544,11 +546,11 @@ export default function Home() {
                   <div className="recycler-profile-icon">👤</div>
                   <div className="recycler-profile-info">
                     <h3 className="recycler-profile-name">{recyclerProfile.full_name || 'N/A'}</h3>
-                    <p className="recycler-profile-code">Member Code: {recyclerProfile.public_id}</p>
+                    <p className="recycler-profile-code">{t('centreStaff.memberCode')}: {recyclerProfile.public_id}</p>
                   </div>
                 </div>
                 <div className="recycler-profile-action">
-                  <span className="action-text">Click to record recycling →</span>
+                  <span className="action-text">{t('centreStaff.clickToRecord')}</span>
                 </div>
               </div>
             )}
@@ -560,28 +562,28 @@ export default function Home() {
       {showGeneralContent && (
         <>
           <div className="hero">
-            <div className="badge">WasteNot · Recycle better</div>
+            <div className="badge">{t('hero.badge')}</div>
             <h1>
-              Recycle Smarter. Earn Rewards.
-              <span className="gradient"> Protect the Environment.</span>
+              {t('hero.title')}
+              <span className="gradient"> {t('hero.subtitle')}</span>
             </h1>
             <p className="lede">
-              WasteNot helps users track recycling activities, earn points, and redeem rewards while supporting sustainable waste management.
+              {t('hero.description')}
             </p>
             <div className="actions">
               <Link href="/register">
-                <button className="btn primary">Get started</button>
+                <button className="btn primary">{t('hero.getStarted')}</button>
               </Link>
               <Link href="/learn-more">
-                <button className="btn ghost">See how it works</button>
+                <button className="btn ghost">{t('hero.howItWorks')}</button>
               </Link>
             </div>
           </div>
 
           <section className="accepted-section">
-            <h2>Recyclable Items Accepted</h2>
+            <h2>{t('items.title')}</h2>
             <p className="lede">
-              WasteNot accepts five types of recyclable items at our collection centres:
+              {t('items.description')}
             </p>
             <div className="accepted-grid">
               {RECYCLABLE_ITEMS.map((item) => (
@@ -605,15 +607,15 @@ export default function Home() {
 
           <section className="steps">
             <div className="steps-header">
-              <h2>How WasteNot Works</h2>
-              <p>Follow these steps to start recycling, earning points, and redeeming rewards.</p>
+              <h2>{t('steps.title')}</h2>
+              <p>{t('steps.subtitle')}</p>
             </div>
             <div className="steps-grid">
-              {steps.map((step, idx) => (
-                <div key={step.label} className="step-card">
+              {['step1', 'step2', 'step3', 'step4', 'step5'].map((stepKey, idx) => (
+                <div key={stepKey} className="step-card">
                   <div className="step-number">0{idx + 1}</div>
-                  <h3>{step.label}</h3>
-                  <p>{step.detail}</p>
+                  <h3>{t(`steps.${stepKey}.label`)}</h3>
+                  <p>{t(`steps.${stepKey}.detail`)}</p>
                 </div>
               ))}
             </div>
@@ -621,26 +623,26 @@ export default function Home() {
 
           <section className="cta">
             <div>
-              <p className="badge">Join the movement</p>
-              <h2>Start recycling smarter today</h2>
+              <p className="badge">{t('cta.badge')}</p>
+              <h2>{t('cta.title')}</h2>
               <p className="lede">
-                Set your location, get custom tips, and keep your community green.
+                {t('cta.description')}
               </p>
             </div>
             <div className="cta-actions">
               <Link href="/register">
-                <button className="btn primary">Create account</button>
+                <button className="btn primary">{t('cta.createAccount')}</button>
               </Link>
               <Link href="/learn-more">
-                <button className="btn ghost">Learn more</button>
+                <button className="btn ghost">{t('cta.learnMore')}</button>
               </Link>
             </div>
           </section>
 
           <footer className="footer">
-            <div>WasteNot · Recycling made simple</div>
+            <div>{t('footer.tagline')}</div>
             <div className="footer-links">
-              <span>By CodeZap</span>
+              <span>{t('footer.by')}</span>
             </div>
           </footer>
         </>

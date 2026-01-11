@@ -24,6 +24,10 @@ export default function RegisterPage() {
     setError(null)
     setMessage(null)
 
+    if (!name || !name.trim()) {
+      setError('Full name is required.')
+      return
+    }
     if (!email || !password) {
       setError('Email and password are required.')
       return
@@ -207,6 +211,7 @@ export default function RegisterPage() {
                 placeholder={role === 'centre_staff' ? t('auth.register.centreNamePlaceholder') : t('auth.register.fullNamePlaceholder')}
                 disabled={loading}
                 className="form-input"
+                required
               />
             </div>
 

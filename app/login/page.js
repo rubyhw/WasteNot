@@ -18,17 +18,37 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    
+    // Client-side validation
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       // Sign in with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: trimmedEmail,
         password,
       });
 
       if (authError) {
-        setError(authError.message);
+        // Provide user-friendly error messages
+        let errorMessage = 'Invalid email or password';
+        if (authError.message.includes('Email not confirmed')) {
+          errorMessage = 'Please verify your email address before logging in';
+        } else if (authError.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        }
+        setError(errorMessage);
         setLoading(false);
         return;
       }
@@ -46,10 +66,11 @@ export default function LoginPage() {
         .eq('id', authData.user.id)
         .single();
 
-      if (profileError) {
-        // If profile doesn't exist, that's okay - user is authenticated
-        // But we might want to create a profile or handle this case
-        console.warn('Profile not found:', profileError.message);
+      if (profileError && profileError.code !== 'PGRST116') {
+        // Log non-404 errors only
+        setError('Error loading profile. Please try again.');
+        setLoading(false);
+        return;
       }
 
       // Redirect based on role

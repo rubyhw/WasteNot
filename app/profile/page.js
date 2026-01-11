@@ -202,7 +202,6 @@ export default function ProfilePage() {
         alert("Redemption failed: " + (result.error || 'Unknown error'));
       }
     } catch (e) {
-      console.error(e);
       alert("System error during redemption");
     }
   };

@@ -8,11 +8,23 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request) {
   try {
-    const { memberCode } = await request.json();
+    const body = await request.json();
+    const { memberCode } = body;
 
-    if (!memberCode) {
+    // Validate input
+    if (!memberCode || typeof memberCode !== 'string') {
       return NextResponse.json(
-        { error: 'Member code is required' },
+        { error: 'Valid member code is required' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize input - trim and convert to uppercase
+    const sanitizedCode = memberCode.trim().toUpperCase();
+    
+    if (sanitizedCode.length === 0 || sanitizedCode.length > 20) {
+      return NextResponse.json(
+        { error: 'Invalid member code format' },
         { status: 400 }
       );
     }
@@ -27,7 +39,7 @@ export async function POST(request) {
     const { data: anyProfile, error: anyProfileError } = await supabase
       .from('profiles')
       .select('id, public_id, full_name, role')
-      .eq('public_id', memberCode.trim())
+      .eq('public_id', sanitizedCode)
       .maybeSingle();
 
     if (anyProfileError) {

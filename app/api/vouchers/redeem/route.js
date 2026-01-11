@@ -9,9 +9,38 @@ export async function POST(request) {
   );
 
   try {
-    const { userId, voucherId, cost } = await request.json();
+    const body = await request.json();
+    const { userId, voucherId, cost } = body;
 
-    // 1. Fetch current profile to check balance
+    // Validate input
+    if (!userId || !voucherId || !cost) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    if (typeof cost !== 'number' || cost <= 0) {
+      return NextResponse.json({ error: 'Invalid cost value' }, { status: 400 });
+    }
+
+    // 1. Verify voucher exists and is active
+    const { data: voucher, error: voucherError } = await supabase
+      .from('vouchers')
+      .select('id, points_cost, is_active')
+      .eq('id', voucherId)
+      .single();
+
+    if (voucherError || !voucher) {
+      return NextResponse.json({ error: 'Voucher not found' }, { status: 404 });
+    }
+
+    if (!voucher.is_active) {
+      return NextResponse.json({ error: 'Voucher is no longer active' }, { status: 400 });
+    }
+
+    if (voucher.points_cost !== cost) {
+      return NextResponse.json({ error: 'Cost mismatch' }, { status: 400 });
+    }
+
+    // 2. Fetch current profile to check balance
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('points_total')
@@ -26,15 +55,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Insufficient points' }, { status: 400 });
     }
 
-    // 2. Perform Transaction (Deduct Points & Record Redemption)
-    // Note: We use sequential operations here. 
+    // 3. Perform Transaction with proper error handling and rollback
+    const newBalance = profile.points_total - cost;
     
     // A. Deduct Points
-    const newBalance = profile.points_total - cost;
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ points_total: newBalance })
-      .eq('id', userId);
+      .eq('id', userId)
+      .eq('points_total', profile.points_total); // Optimistic locking
 
     if (updateError) {
       return NextResponse.json({ error: 'Failed to update balance' }, { status: 500 });
@@ -51,15 +80,18 @@ export async function POST(request) {
       });
 
     if (insertError) {
-      // In a strict environment, you would rollback points here.
-      console.error("Redemption insert failed", insertError);
-      return NextResponse.json({ error: 'Redemption record failed' }, { status: 500 });
+      // Rollback: restore the points
+      await supabase
+        .from('profiles')
+        .update({ points_total: profile.points_total })
+        .eq('id', userId);
+      
+      return NextResponse.json({ error: 'Redemption record failed, points restored' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, newBalance });
 
   } catch (error) {
-    console.error("Redeem API Error:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

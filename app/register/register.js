@@ -41,8 +41,6 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      console.log('Starting registration with role:', role);
-      
       // Step 1: Create authentication user in Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp(
         { 
@@ -68,11 +66,8 @@ export default function RegisterPage() {
         return
       }
 
-      console.log('Authentication created successfully. User ID:', data.user.id);
-      
       // Step 2: Create profile in profiles table with correct role
       try {
-        console.log('Creating profile with role:', role, 'for user:', data.user.id);
           const profileResponse = await fetch('/api/auth/create-profile', {
             method: 'POST',
             headers: {
@@ -102,8 +97,6 @@ export default function RegisterPage() {
 
           // Verify the role was set correctly in profiles table
           if (profileData.profile && profileData.profile.role) {
-            console.log('Profile created successfully with role:', profileData.profile.role);
-            
             // Verify centre_staff role
             if (role === 'centre_staff' && profileData.profile.role !== 'centre_staff') {
               console.error('Role mismatch! Expected centre_staff but got:', profileData.profile.role);
@@ -119,10 +112,6 @@ export default function RegisterPage() {
               setLoading(false);
               return;
             }
-            
-            console.log('✅ Registration complete! Authentication and profile both created successfully.');
-            console.log('   - User ID:', data.user.id);
-            console.log('   - Role in profiles table:', profileData.profile.role);
             
             // Registration successful - user is automatically logged in
             // Show success message and redirect to home page

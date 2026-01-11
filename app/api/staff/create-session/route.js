@@ -9,28 +9,37 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request) {
   try {
-    const { recyclerId, items } = await request.json();
+    const body = await request.json();
+    const { recyclerId, items } = body;
 
-    if (!recyclerId) {
+    // Validate recyclerId
+    if (!recyclerId || typeof recyclerId !== 'string') {
       return NextResponse.json(
-        { error: 'Recycler ID is required' },
+        { error: 'Valid Recycler ID is required' },
         { status: 400 }
       );
     }
 
+    // Validate items array
     if (!items || !Array.isArray(items)) {
       return NextResponse.json(
-        { error: 'Items array is required' },
+        { error: 'Items must be an array' },
         { status: 400 }
       );
     }
 
-    // Filter items with quantity > 0
-    const validItems = items.filter(item => item.quantity > 0);
+    // Filter and validate items
+    const validItems = items.filter(item => {
+      return item &&
+             typeof item.itemId === 'number' &&
+             typeof item.quantity === 'number' &&
+             item.quantity > 0 &&
+             item.quantity < 1000000; // Reasonable max limit
+    });
 
     if (validItems.length === 0) {
       return NextResponse.json(
-        { error: 'At least one item with quantity > 0 is required' },
+        { error: 'At least one valid item with quantity > 0 is required' },
         { status: 400 }
       );
     }

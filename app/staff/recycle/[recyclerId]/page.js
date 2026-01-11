@@ -82,17 +82,18 @@ export default function RecyclePage() {
   };
 
   const handleWeightChange = (itemId, value) => {
-    // Allow empty string, numbers, and decimal points
-    if (value === '' || value === '.') {
+    // Allow empty string for clearing input
+    if (value === '') {
       setQuantities(prev => ({
         ...prev,
-        [itemId]: value,
+        [itemId]: '',
       }));
       return;
     }
 
+    // Validate and parse numeric input
     const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= 0) {
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 10000) { // Max 10 tons
       setQuantities(prev => ({
         ...prev,
         [itemId]: numValue,

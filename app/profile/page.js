@@ -39,17 +39,8 @@ export default function ProfilePage() {
   // Settings state
   const [settings, setSettings] = useState({
     emailNotifications: true,
-    darkMode: false,
-    language: language || 'en'
+    darkMode: false
   });
-
-  // Sync settings language with context language
-  useEffect(() => {
-    setSettings(prev => ({
-      ...prev,
-      language: language
-    }));
-  }, [language]);
 
   const fetchUserData = useCallback(async () => {
     try {
@@ -272,9 +263,6 @@ export default function ProfilePage() {
   };
 
   const handleSettingsChange = (setting, value) => {
-    if (setting === 'language') {
-      switchLanguage(value);
-    }
     setSettings(prev => ({
       ...prev,
       [setting]: value
@@ -1025,25 +1013,6 @@ export default function ProfilePage() {
                     />
                     <span className="toggle-slider"></span>
                   </label>
-                </div>
-              </div>
-
-              <div className="settings-group">
-                <h4>{t('profile.preferences')}</h4>
-                <div className="setting-item">
-                  <div className="setting-info">
-                    <div className="setting-label">{t('profile.language')}</div>
-                    <div className="setting-description">{t('profile.languageDesc')}</div>
-                  </div>
-                  <select
-                    value={settings.language}
-                    onChange={(e) => handleSettingsChange('language', e.target.value)}
-                    className="setting-select"
-                  >
-                    <option value="en">English</option>
-                    <option value="ms">Malay (Bahasa Melayu)</option>
-                    <option value="zh">Chinese (中文)</option>
-                  </select>
                 </div>
               </div>
 

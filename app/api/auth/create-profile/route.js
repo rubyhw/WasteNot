@@ -85,7 +85,7 @@ export async function POST(request) {
             }
           }
         }
-        const newPublicId = `WN${String(nextNumber).padStart(6, '0')}`;
+        const newPublicId = `WN${String(nextNumber).padStart(7, '0')}`;
 
         // Update the profile
         const { data: updatedProfile, error: updateError } = await supabase
@@ -132,7 +132,7 @@ export async function POST(request) {
       if (fetchError) {
         console.error('Error fetching existing public_ids:', fetchError);
         // Fallback: use a timestamp-based approach
-        return `WN${String(Date.now()).slice(-6).padStart(6, '0')}`;
+        return `WN${String(Date.now()).slice(-7).padStart(7, '0')}`;
       }
 
       let nextNumber = 1;
@@ -165,8 +165,8 @@ export async function POST(request) {
         }
       }
 
-      // Format as WN0000031 (WN + 6-digit zero-padded number)
-      return `WN${String(nextNumber).padStart(6, '0')}`;
+      // Format as WN0000003 (WN + 7-digit zero-padded number)
+      return `WN${String(nextNumber).padStart(7, '0')}`;
     }
 
     // Validate and set role - ensure correct role is saved
@@ -188,8 +188,11 @@ export async function POST(request) {
     // Create the profile in Supabase
     // Match the profiles table schema: id, full_name, role, points_total, created_at, public_id
     // Note: created_at will be set automatically by the database (default now() or trigger)
-    // Ensure full_name is properly trimmed and not empty
+    // Ensure full_name is properly trimmed and saved
     const trimmedFullName = fullName ? fullName.trim() : null;
+    
+    console.log('Received fullName:', fullName);
+    console.log('Trimmed fullName:', trimmedFullName);
     
     // Generate sequential public_id only for recyclers, not for centre_staff
     let publicIdForProfile = null;
@@ -199,7 +202,7 @@ export async function POST(request) {
     
     const profileData = {
       id: userId, // Primary key - user ID from authentication
-      full_name: trimmedFullName || null,
+      full_name: trimmedFullName,
       role: validRole, // 'centre_staff' or 'recycler'
       points_total: 0, // Initialize points to 0 for new users
       public_id: publicIdForProfile // Sequential ID in format WN0000031 only for recyclers, null for centre_staff
@@ -210,7 +213,8 @@ export async function POST(request) {
       id: profileData.id,
       full_name: profileData.full_name,
       role: profileData.role,
-      points_total: profileData.points_total
+      points_total: profileData.points_total,
+      public_id: profileData.public_id
     });
     
     const { data, error } = await supabase

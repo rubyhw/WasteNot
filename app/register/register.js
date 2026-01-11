@@ -164,7 +164,6 @@ export default function RegisterPage() {
 
           {message && (
             <div className="auth-success">
-              <span className="success-icon">✅</span>
               <span>{message}</span>
             </div>
           )}

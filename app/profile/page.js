@@ -280,7 +280,12 @@ export default function ProfilePage() {
         'Full Name': profile?.full_name || 'N/A',
         'Email': user?.email || 'N/A',
         'Role': profile?.role || 'N/A',
-        'Member Since': profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A',
+        'Member Since': profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }) : 'N/A',
         'Total Transactions': transactions.length,
         'Settings': JSON.stringify(settings)
       };
@@ -798,7 +803,12 @@ export default function ProfilePage() {
                   <div className="info-item">
                     <span className="info-label">Member Since:</span>
                     <span className="info-value">
-                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
+                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                      }) : 'Unknown'}
                     </span>
                   </div>
                 </div>

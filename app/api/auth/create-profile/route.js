@@ -49,8 +49,9 @@ export async function POST(request) {
         );
       }
 
-      if (!profile.public_id) {
-        // Generate sequential public_id
+      // Only generate public_id for recyclers, not for centre_staff
+      if (!profile.public_id && profile.role === 'recycler') {
+        // Generate sequential public_id function (same logic as below)
         const { data: existingProfiles } = await supabase
           .from('profiles')
           .select('public_id')
@@ -190,15 +191,18 @@ export async function POST(request) {
     // Ensure full_name is properly trimmed and not empty
     const trimmedFullName = fullName ? fullName.trim() : null;
     
-    // Generate sequential public_id
-    const sequentialPublicId = await generateSequentialPublicId();
+    // Generate sequential public_id only for recyclers, not for centre_staff
+    let publicIdForProfile = null;
+    if (validRole === 'recycler') {
+      publicIdForProfile = await generateSequentialPublicId();
+    }
     
     const profileData = {
       id: userId, // Primary key - user ID from authentication
       full_name: trimmedFullName || null,
       role: validRole, // 'centre_staff' or 'recycler'
       points_total: 0, // Initialize points to 0 for new users
-      public_id: sequentialPublicId // Sequential ID in format WN0000031
+      public_id: publicIdForProfile // Sequential ID in format WN0000031 only for recyclers, null for centre_staff
       // created_at is handled by database default/trigger
     };
     

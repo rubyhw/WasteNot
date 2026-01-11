@@ -29,11 +29,10 @@ export default function ProfilePage() {
   const [updating, setUpdating] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [updatedPointsTotal, setUpdatedPointsTotal] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [editData, setEditData] = useState({
     full_name: '',
-    email: '',
-    phone: '',
-    address: ''
+    email: ''
   });
 
   // Settings state
@@ -150,9 +149,7 @@ export default function ProfilePage() {
       if (profile) {
         setEditData({
           full_name: profile.full_name || '',
-          email: user.email || '',
-          phone: profile.phone || '',
-          address: profile.address || ''
+          email: user.email || ''
         });
       }
 
@@ -239,20 +236,27 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     try {
       setUpdating(true);
+      setSuccessMessage(null);
 
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: editData.full_name,
-          phone: editData.phone,
-          address: editData.address
+          full_name: editData.full_name
         })
         .eq('id', user.id);
 
       if (error) throw error;
 
       setEditMode(false);
-      window.location.reload();
+      setSuccessMessage('Full name updated successfully!');
+      
+      // Refresh profile data
+      await fetchUserData();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile. Please try again.');
@@ -275,10 +279,13 @@ export default function ProfilePage() {
         'User ID': profile?.id || 'N/A',
         'Full Name': profile?.full_name || 'N/A',
         'Email': user?.email || 'N/A',
-        'Phone': profile?.phone || 'N/A',
-        'Address': profile?.address || 'N/A',
         'Role': profile?.role || 'N/A',
-        'Member Since': profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A',
+        'Member Since': profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }) : 'N/A',
         'Total Transactions': transactions.length,
         'Settings': JSON.stringify(settings)
       };
@@ -714,13 +721,28 @@ export default function ProfilePage() {
 
         {activeTab === 'personal' && (
           <div className="personal-section">
+            {successMessage && (
+              <div style={{
+                padding: '12px 16px',
+                backgroundColor: '#d1fae5',
+                border: '1px solid #86efac',
+                borderRadius: '8px',
+                color: '#166534',
+                marginBottom: '20px'
+              }}>
+                {successMessage}
+              </div>
+            )}
             <div className="personal-card">
               <div className="card-header">
                 <h3>Personal Information</h3>
                 {!editMode && (
                   <button
                     className="btn secondary small"
-                    onClick={() => setEditMode(true)}
+                    onClick={() => {
+                      setEditMode(true);
+                      setSuccessMessage(null);
+                    }}
                   >
                     Edit
                   </button>
@@ -737,6 +759,7 @@ export default function ProfilePage() {
                       value={editData.full_name}
                       onChange={(e) => setEditData(prev => ({ ...prev, full_name: e.target.value }))}
                       className="form-input"
+                      required
                     />
                   </div>
                   <div className="form-group">
@@ -749,26 +772,6 @@ export default function ProfilePage() {
                       className="form-input"
                     />
                     <small className="form-help">Email cannot be changed</small>
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
-                    <input
-                      id="phone"
-                      type="tel"
-                      value={editData.phone}
-                      onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="address">Address</label>
-                    <textarea
-                      id="address"
-                      value={editData.address}
-                      onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
-                      className="form-input"
-                      rows="3"
-                    />
                   </div>
                   <div className="form-actions">
                     <button
@@ -798,17 +801,14 @@ export default function ProfilePage() {
                     <span className="info-value">{user?.email}</span>
                   </div>
                   <div className="info-item">
-                    <span className="info-label">Phone:</span>
-                    <span className="info-value">{profile?.phone || 'Not set'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Address:</span>
-                    <span className="info-value">{profile?.address || 'Not set'}</span>
-                  </div>
-                  <div className="info-item">
                     <span className="info-label">Member Since:</span>
                     <span className="info-value">
-                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
+                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                      }) : 'Unknown'}
                     </span>
                   </div>
                 </div>

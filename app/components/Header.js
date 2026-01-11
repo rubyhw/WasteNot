@@ -31,6 +31,7 @@ export default function Header() {
   // Only show Transaction and Report for centre_staff
   const centreStaffNavItems = isCentreStaff
     ? [
+        { label: t('nav.home'), href: '/' },
         { label: t('nav.transaction'), href: '/transactions' },
         { label: t('nav.report'), href: '/reports' },
       ]

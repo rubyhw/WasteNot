@@ -132,8 +132,8 @@ useEffect(() => {
             {/* Header Actions */}
             <div className="admin-toolbar">
                 <div>
-                    <h1 className="section-title">Rewards & Rankings</h1>
-                    <p style={{ color: 'var(--muted)' }}>Manage redemption rewards and track top contributors</p>
+                    <h1 className="section-title">Rewards</h1>
+                    <p style={{ color: 'var(--muted)' }}>Manage redemption rewards</p>
                 </div>
                 <button
                     className="btn primary"
@@ -222,77 +222,7 @@ useEffect(() => {
                 </table>
             </div>
 
-{/* RIGHT COLUMN: Leaderboard Sidebar */}
-<aside style={{ 
-    background: 'white', 
-    borderRadius: '12px', 
-    border: '1px solid #e2e8f0', 
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-}}>
-    <div style={{ 
-        padding: '16px', 
-        borderBottom: '1px solid #e2e8f0', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        background: '#f8fafc',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px'
-    }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Tag size={18} style={{ color: '#f59e0b' }} />
-            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>Top Recyclers</h2>
-        </div>
-    </div>
 
-    <div style={{ padding: '8px' }}>
-        {leaders && leaders.length === 0 ? (
-            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
-                No data yet
-            </div>
-        ) : (
-           (Array.isArray(leaders) ? leaders : []).map((user, index) => (
-                <div key={user.id || index} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
-                    padding: '12px',
-                    borderRadius: '8px',
-                    marginBottom: '4px',
-                    background: index === 0 ? '#fffbeb' : 'transparent'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ 
-                            width: '20px', 
-                            fontSize: '12px', 
-                            fontWeight: 800, 
-                            color: index === 0 ? '#f59e0b' : '#94a3b8' 
-                        }}>
-                            #{index + 1}
-                        </span>
-                        <div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
-                                {user.public_id || 'Member'}
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#64748b' }}>
-                                Rank {index + 1}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#10b981' }}>
-                            {user.points_total || 0}
-                        </div>
-                        <div style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>
-                            Points
-                        </div>
-                    </div>
-                </div>
-            ))
-        )}
-    </div>
-</aside>
             </div>
 
             {/* Unified Modal */}

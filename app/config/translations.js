@@ -96,7 +96,7 @@ export const translations = {
       memberId: "Member ID",
       showIdAtCentres: "Show this ID at collection centres",
       copyId: "Copy ID",
-      quickStats: "Quick Stats",
+      quickStats: "Quick Statistics",
       itemsRecycled: "Items Recycled",
       pointsEarned: "Points Earned",
       collectionVisits: "Collection Visits",

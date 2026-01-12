@@ -104,7 +104,14 @@ export default function Home() {
     totalRecycled: 0,
     totalPoints: 0,
     visits: 0,
-    transactions: []
+    transactions: [],
+    itemTotals: {
+      plasticBottle: 0,
+      aluminiumTin: 0,
+      glass: 0,
+      newspaper: 0,
+      cardboard: 0
+    }
   });
   const [loadingStats, setLoadingStats] = useState(false);
   
@@ -216,6 +223,30 @@ export default function Home() {
           ...session.items
         }));
         
+        // Calculate item totals from all transactions
+        const itemTotals = {
+          plasticBottle: 0,  // ID: 1
+          aluminiumTin: 0,   // ID: 2
+          glass: 0,          // ID: 4
+          newspaper: 0,      // ID: 3 (in grams, convert to kg)
+          cardboard: 0       // ID: 5 (in grams, convert to kg)
+        };
+
+        (transactionsData || []).forEach(tx => {
+          const quantity = tx.quantity || 0;
+          if (tx.item_id === 1) { // Plastic Bottle
+            itemTotals.plasticBottle += quantity;
+          } else if (tx.item_id === 2) { // Aluminium Tin
+            itemTotals.aluminiumTin += quantity;
+          } else if (tx.item_id === 3) { // Newspaper (grams to kg)
+            itemTotals.newspaper += quantity / 1000;
+          } else if (tx.item_id === 4) { // Glass
+            itemTotals.glass += quantity;
+          } else if (tx.item_id === 5) { // Cardboard (grams to kg)
+            itemTotals.cardboard += quantity / 1000;
+          }
+        });
+
         const totalRecycled = transactions.reduce((total, transaction) => {
           return total + RECYCLABLE_ITEMS.reduce((itemTotal, item) => {
             return itemTotal + (transaction[item.id] || 0);
@@ -229,7 +260,8 @@ export default function Home() {
           totalRecycled,
           totalPoints,
           visits: transactions.length,
-          transactions: transactions.slice(0, 3) // Recent 3 transactions
+          transactions: transactions.slice(0, 3), // Recent 3 transactions
+          itemTotals
         });
       }
     } catch (err) {
@@ -381,10 +413,41 @@ export default function Home() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>
-                      {recyclerStats.totalRecycled}
+                    <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>
+                      {t('dashboard.itemsRecycled')}
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--muted)' }}>{t('dashboard.itemsRecycled')}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Plastic Bottle:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--primary)' }}>
+                          {recyclerStats.itemTotals.plasticBottle.toFixed(0)} pieces
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Aluminium Tin:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--primary)' }}>
+                          {recyclerStats.itemTotals.aluminiumTin.toFixed(0)} pieces
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Glass:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--primary)' }}>
+                          {recyclerStats.itemTotals.glass.toFixed(0)} pieces
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Newspaper:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--primary)' }}>
+                          {recyclerStats.itemTotals.newspaper.toFixed(2)} kg
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px', color: 'var(--text)' }}>Cardboard:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--primary)' }}>
+                          {recyclerStats.itemTotals.cardboard.toFixed(2)} kg
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--primary)' }}>

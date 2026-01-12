@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../contexts';
 import { useLanguage } from '../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
@@ -9,8 +9,10 @@ import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 
 export default function TransactionsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isCentreStaff, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const hasRefreshedRef = useRef(false);
   const [transactions, setTransactions] = useState([]);
   const [centreTotals, setCentreTotals] = useState({});
   const [recyclerTotals, setRecyclerTotals] = useState(null);
@@ -48,12 +50,14 @@ export default function TransactionsPage() {
       }
 
       const url = selectedRecycler 
-        ? `/api/staff/transactions?recyclerId=${selectedRecycler.id}`
-        : '/api/staff/transactions';
+        ? `/api/staff/transactions?recyclerId=${selectedRecycler.id}&_t=${Date.now()}`
+        : `/api/staff/transactions?_t=${Date.now()}`;
 
+      // Add cache-busting timestamp to ensure fresh data
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache',
         },
       });
 
@@ -63,7 +67,14 @@ export default function TransactionsPage() {
         throw new Error(data.error || 'Failed to fetch transactions');
       }
 
-      setTransactions(data.transactions || []);
+      const transactionsData = data.transactions || [];
+      console.log(`[Transactions Page] Received ${transactionsData.length} transactions at ${new Date().toLocaleTimeString()}`);
+      if (transactionsData.length > 0) {
+        console.log('[Transactions Page] First transaction:', transactionsData[0]);
+        console.log('[Transactions Page] Last transaction:', transactionsData[transactionsData.length - 1]);
+      }
+      
+      setTransactions(transactionsData);
       setCentreTotals(data.centreTotals || {});
       setRecyclerTotals(data.recyclerTotals || null);
     } catch (err) {
@@ -73,12 +84,92 @@ export default function TransactionsPage() {
     }
   }, [selectedRecycler]);
 
-  // Fetch transactions
+  // Track previous pathname to detect navigation
+  const prevPathnameRef = useRef(pathname);
+  const isNavigatingRef = useRef(false);
+
+  // Fetch transactions on initial load and when recycler filter changes
+  // But skip if we're navigating from another page (let the navigation effect handle it)
   useEffect(() => {
-    if (user && isCentreStaff && !authLoading) {
-      fetchTransactions();
+    if (user && isCentreStaff && !authLoading && pathname === '/transactions') {
+      // Only fetch immediately if we're not navigating from another page
+      if (!isNavigatingRef.current) {
+        console.log('[Transactions Page] Fetching transactions (initial load or filter change)...');
+        fetchTransactions();
+      } else {
+        console.log('[Transactions Page] Skipping initial fetch - navigation refresh will handle it');
+        isNavigatingRef.current = false;
+      }
     }
-  }, [user, isCentreStaff, authLoading, selectedRecycler, fetchTransactions]);
+  }, [user, isCentreStaff, authLoading, selectedRecycler, fetchTransactions, pathname]);
+
+  // Refresh transactions when navigating TO this page (e.g., after creating a session)
+  useEffect(() => {
+    if (!user || !isCentreStaff || authLoading) return;
+    
+    // Check if we just navigated TO this page (pathname changed from something else to /transactions)
+    const justNavigatedToPage = prevPathnameRef.current !== pathname && pathname === '/transactions';
+    
+    if (pathname !== '/transactions') {
+      prevPathnameRef.current = pathname;
+      hasRefreshedRef.current = false;
+      isNavigatingRef.current = false;
+      return;
+    }
+
+    if (justNavigatedToPage) {
+      console.log('[Transactions Page] Just navigated to transactions page, refreshing...');
+      isNavigatingRef.current = true;
+      
+      // Multiple refreshes with increasing delays to ensure we get the latest data
+      const timeout1 = setTimeout(() => {
+        console.log('[Transactions Page] First refresh (2s delay)...');
+        fetchTransactions();
+      }, 2000);
+      
+      const timeout2 = setTimeout(() => {
+        console.log('[Transactions Page] Second refresh (4s delay)...');
+        fetchTransactions();
+      }, 4000);
+      
+      const timeout3 = setTimeout(() => {
+        console.log('[Transactions Page] Third refresh (6s delay)...');
+        fetchTransactions();
+        isNavigatingRef.current = false;
+      }, 6000);
+      
+      prevPathnameRef.current = pathname;
+      
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+      };
+    }
+  }, [pathname, user, isCentreStaff, authLoading, fetchTransactions]);
+
+  // Refresh when page becomes visible
+  useEffect(() => {
+    if (!user || !isCentreStaff || authLoading) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchTransactions();
+      }
+    };
+
+    const handleFocus = () => {
+      fetchTransactions();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, isCentreStaff, authLoading, fetchTransactions]);
 
   const handleRecyclerSearch = async (e) => {
     e.preventDefault();
@@ -119,13 +210,16 @@ export default function TransactionsPage() {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    // Convert UTC timestamp to local time
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Use browser's local timezone
     });
   };
 
@@ -135,44 +229,104 @@ export default function TransactionsPage() {
   };
 
   // Group transactions by session so each recycling session is shown in a single row
-  const groupedSessions = transactions.reduce((groups, tx) => {
-    const sessionId = tx.session_id || tx.id;
-    if (!groups[sessionId]) {
-      groups[sessionId] = {
-        sessionId,
-        recycler: tx.recycler,
-        created_at: tx.created_at,
-        items: [],
-      };
+  // Use useMemo to ensure grouping happens when transactions change
+  const sessionList = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      console.log('[Transactions Page] No transactions to group');
+      return [];
     }
 
-    const quantity =
-      tx.displayQuantity !== undefined
-        ? tx.displayQuantity
-        : tx.quantity;
+    const groupedSessions = transactions.reduce((groups, tx) => {
+      const sessionId = tx.session_id || tx.id;
+      if (!sessionId) {
+        console.warn('[Transactions Page] Transaction missing session_id:', tx);
+        return groups;
+      }
+      
+      if (!groups[sessionId]) {
+        // Use session's created_at if available, otherwise fall back to transaction's created_at
+        const sessionCreatedAt = tx.session?.created_at || tx.created_at;
+        groups[sessionId] = {
+          sessionId,
+          recycler: tx.recycler,
+          created_at: sessionCreatedAt,
+          items: [],
+        };
+      }
 
-    const existingItem = groups[sessionId].items.find(
-      (item) => item.itemId === tx.item_id
-    );
+      const quantity =
+        tx.displayQuantity !== undefined
+          ? tx.displayQuantity
+          : tx.quantity;
 
-    const unit =
-      RECYCLABLE_ITEMS.find((i) => i.id === tx.item_id)?.unit || 'units';
+      const existingItem = groups[sessionId].items.find(
+        (item) => item.itemId === tx.item_id
+      );
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      groups[sessionId].items.push({
-        itemId: tx.item_id,
-        name: getItemName(tx.item_id),
-        unit,
-        quantity,
-      });
+      const unit =
+        RECYCLABLE_ITEMS.find((i) => i.id === tx.item_id)?.unit || 'units';
+
+      if (existingItem) {
+        existingItem.quantity += quantity;
+      } else {
+        groups[sessionId].items.push({
+          itemId: tx.item_id,
+          name: getItemName(tx.item_id),
+          unit,
+          quantity,
+        });
+      }
+
+      return groups;
+    }, {});
+
+    const sessions = Object.values(groupedSessions);
+    
+    // Define the display order for items: Plastic Bottle, Aluminium Tin, Newspaper, Glass, Cardboard
+    const itemDisplayOrder = [1, 2, 3, 4, 5]; // IDs: Plastic Bottle, Aluminium Tin, Newspaper, Glass, Cardboard
+    
+    // Sort items within each session according to the specified order
+    sessions.forEach(session => {
+      if (session.items && session.items.length > 0) {
+        session.items.sort((a, b) => {
+          const indexA = itemDisplayOrder.indexOf(a.itemId);
+          const indexB = itemDisplayOrder.indexOf(b.itemId);
+          // If item not in order list, put it at the end
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
+      }
+    });
+    
+    // Sort sessions by created_at descending (newest first)
+    sessions.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB - dateA; // Descending order (newest first)
+    });
+    
+    // Debug: Log grouped sessions
+    console.log(`[Transactions Page] Total transactions: ${transactions.length}`);
+    console.log(`[Transactions Page] Grouped into ${sessions.length} sessions`);
+    if (transactions.length > 0) {
+      console.log('[Transactions Page] First transaction (newest):', transactions[0]);
+      console.log('[Transactions Page] First transaction session_id:', transactions[0].session_id);
+      console.log('[Transactions Page] First transaction session:', transactions[0].session);
+      console.log('[Transactions Page] First transaction created_at:', transactions[0].created_at);
     }
-
-    return groups;
-  }, {});
-
-  const sessionList = Object.values(groupedSessions);
+    if (sessions.length > 0) {
+      console.log('[Transactions Page] First session (newest):', sessions[0]);
+      console.log('[Transactions Page] First session created_at:', sessions[0].created_at);
+      console.log('[Transactions Page] First session items:', sessions[0].items);
+      console.log('[Transactions Page] First session items length:', sessions[0].items?.length || 0);
+    } else if (transactions.length > 0) {
+      console.warn('[Transactions Page] WARNING: Have transactions but no sessions grouped!');
+      console.warn('[Transactions Page] Sample transaction session_id:', transactions[0].session_id);
+    }
+    
+    return sessions;
+  }, [transactions]);
 
   const toggleSessionSelected = (sessionId) => {
     setSelectedSessions((prev) =>
@@ -261,6 +415,7 @@ export default function TransactionsPage() {
         throw new Error(data.error || 'Failed to update transaction');
       }
 
+      console.log('[Transactions Page] Transaction updated successfully in Supabase');
       closeEditModal();
       await fetchTransactions();
     } catch (err) {
@@ -303,12 +458,14 @@ export default function TransactionsPage() {
           throw new Error(data.error || 'Failed to delete transaction');
         }
 
+        console.log(`[Transactions Page] Session ${sessionId} deleted successfully from Supabase`);
         if (editingSession && editingSession.sessionId === sessionId) {
           closeEditModal();
         }
       }
 
       setSelectedSessions([]);
+      console.log('[Transactions Page] All selected sessions deleted, refreshing transaction list');
       await fetchTransactions();
     } catch (err) {
       console.error('Error deleting transaction:', err);
@@ -447,14 +604,26 @@ export default function TransactionsPage() {
         </div>
         {loading ? (
           <div className="loading">{t('common.loading')}</div>
-        ) : sessionList.length === 0 ? (
+        ) : !sessionList || sessionList.length === 0 ? (
           <div className="empty-state">
             <p>{t('transactions.noTransactionsFound')}</p>
+            <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--muted)' }}>
+              {transactions.length > 0 
+                ? `Found ${transactions.length} transactions but couldn't group them into sessions.`
+                : 'No transactions found.'}
+            </p>
           </div>
         ) : (
           <div className="transactions-list">
-            {sessionList.map((session, index) => (
-              <div key={session.sessionId} className="transaction-card">
+            {sessionList && sessionList.length > 0 ? (
+              sessionList.map((session, index) => {
+                if (!session || !session.sessionId) {
+                  console.warn('[Transactions Page] Invalid session:', session);
+                  return null;
+                }
+                console.log(`[Transactions Page] Rendering session ${index}:`, session.sessionId, 'with', session.items?.length || 0, 'items');
+                return (
+              <div key={session.sessionId || `session-${index}`} className="transaction-card">
                 <div className="transaction-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {isDeleteMode && (
@@ -501,17 +670,25 @@ export default function TransactionsPage() {
                   </div>
                 </div>
                 <div className="transaction-details">
-                  {session.items.map((item) => (
-                    <div key={item.itemId} className="detail-item">
-                      <span className="detail-label">{item.name}:</span>
-                      <span className="detail-value weight">
-                        {item.quantity.toFixed(
-                          item.quantity % 1 === 0 ? 0 : 1
-                        )}{' '}
-                        {item.unit}
+                  {session.items && session.items.length > 0 ? (
+                    session.items.map((item) => (
+                      <div key={item.itemId} className="detail-item">
+                        <span className="detail-label">{item.name}:</span>
+                        <span className="detail-value weight">
+                          {item.quantity.toFixed(
+                            item.quantity % 1 === 0 ? 0 : 1
+                          )}{' '}
+                          {item.unit}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="detail-item">
+                      <span className="detail-label" style={{ color: 'var(--muted)' }}>
+                        No items in this session
                       </span>
                     </div>
-                  ))}
+                  )}
                   <div className="detail-item">
                     <span className="detail-label">Timestamp:</span>
                     <span className="detail-value">
@@ -520,7 +697,13 @@ export default function TransactionsPage() {
                   </div>
                 </div>
               </div>
-            ))}
+                );
+              })
+            ) : (
+              <div className="empty-state">
+                <p>No sessions to display</p>
+              </div>
+            )}
           </div>
         )}
       </div>

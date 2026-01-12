@@ -64,59 +64,103 @@ export async function GET(request) {
     const recyclerId = searchParams.get('recyclerId');
     const period = searchParams.get('period'); // e.g. 'month' or 'year'
 
-    // Fetch transactions with related data
-    let query = supabase
-      .from('recycling_transactions')
-      .select(`
-        id,
-        session_id,
-        quantity,
-        item_id,
-        recycler_id,
-        collection_centre_id,
-        created_at,
-        recycler:recycler_id (
-          id,
-          public_id,
-          full_name
-        )
-      `)
-      .eq('collection_centre_id', collectionCentreId);
-
-    // Optional: filter by current month or current year
+    // Store filter parameters for use in pagination loop
+    let periodFilter = null;
     if (period === 'month' || period === 'year') {
       const now = new Date();
-      let start;
-      let end;
-
       if (period === 'month') {
-        start = new Date(now.getFullYear(), now.getMonth(), 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        periodFilter = {
+          start: new Date(now.getFullYear(), now.getMonth(), 1),
+          end: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+        };
       } else {
-        // year
-        start = new Date(now.getFullYear(), 0, 1);
-        end = new Date(now.getFullYear() + 1, 0, 1);
+        periodFilter = {
+          start: new Date(now.getFullYear(), 0, 1),
+          end: new Date(now.getFullYear() + 1, 0, 1),
+        };
+      }
+    }
+
+    // Fetch all transactions (Supabase default limit is 1000, but we want all)
+    // Use pagination to ensure we get all records
+    let allTransactions = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      // Create a fresh query for each page to avoid query builder issues
+      let pageQuery = supabase
+        .from('recycling_transactions')
+        .select(`
+          id,
+          session_id,
+          quantity,
+          item_id,
+          recycler_id,
+          collection_centre_id,
+          created_at,
+          recycler:recycler_id (
+            id,
+            public_id,
+            full_name
+          ),
+          session:recycling_sessions!session_id (
+            id,
+            created_at
+          )
+        `)
+        .eq('collection_centre_id', collectionCentreId)
+        .order('created_at', { ascending: false })
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      // Apply filters if needed
+      if (period === 'month' || period === 'year') {
+        const now = new Date();
+        let start, end;
+        if (period === 'month') {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        } else {
+          start = new Date(now.getFullYear(), 0, 1);
+          end = new Date(now.getFullYear() + 1, 0, 1);
+        }
+        pageQuery = pageQuery
+          .gte('created_at', start.toISOString())
+          .lt('created_at', end.toISOString());
       }
 
-      query = query
-        .gte('created_at', start.toISOString())
-        .lt('created_at', end.toISOString());
+      if (recyclerId) {
+        pageQuery = pageQuery.eq('recycler_id', recyclerId);
+      }
+
+      const { data: pageData, error: pageError } = await pageQuery;
+
+      if (pageError) {
+        console.error('[Transactions API] Page error:', pageError);
+        return NextResponse.json(
+          { error: pageError.message },
+          { status: 500 }
+        );
+      }
+
+      if (pageData && pageData.length > 0) {
+        allTransactions = [...allTransactions, ...pageData];
+        page++;
+        hasMore = pageData.length === pageSize;
+      } else {
+        hasMore = false;
+      }
     }
 
-    query = query.order('created_at', { ascending: false });
+    const transactions = allTransactions;
 
-    // If recyclerId is provided, filter by that recycler
-    if (recyclerId) {
-      query = query.eq('recycler_id', recyclerId);
-    }
-
-    const { data: transactions, error } = await query;
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+    // Debug: Log transaction count and latest transaction
+    console.log(`[Transactions API] Fetched ${transactions.length} transactions for collection centre ${collectionCentreId}`);
+    if (transactions.length > 0) {
+      console.log(`[Transactions API] Latest transaction created_at: ${transactions[0].created_at}`);
+      console.log(`[Transactions API] Latest transaction session_id: ${transactions[0].session_id}`);
+      console.log(`[Transactions API] Latest transaction session:`, transactions[0].session);
     }
 
     // Fetch item names from recyclable_items table

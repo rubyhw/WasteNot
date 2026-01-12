@@ -161,8 +161,11 @@ export default function RecyclePage() {
         throw new Error(data.error || 'Failed to create recycling session');
       }
 
-      // Success - redirect to home or show success message
-      router.push('/?success=recycling-recorded');
+      console.log('[Recycle Page] Session created successfully, redirecting to transactions');
+      
+      // Success - redirect to transactions page to see the new session
+      // Use replace to avoid back button issues and ensure clean navigation
+      router.replace('/transactions');
     } catch (err) {
       setError(err.message || 'An error occurred while submitting');
     } finally {

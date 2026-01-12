@@ -136,12 +136,14 @@ export async function PATCH(request, { params }) {
       .select('item_id, quantity')
       .eq('session_id', sessionId);
 
+    console.log(`[Edit Transaction API] Deleting ${oldTransactions?.length || 0} old transactions for session ${sessionId}`);
     const { error: deleteError } = await supabase
       .from('recycling_transactions')
       .delete()
       .eq('session_id', sessionId);
 
     if (deleteError) {
+      console.error('[Edit Transaction API] Error deleting old transactions:', deleteError);
       return NextResponse.json(
         { error: `Failed to update session: ${deleteError.message}` },
         { status: 500 }
@@ -149,16 +151,21 @@ export async function PATCH(request, { params }) {
     }
 
     // Insert new transactions
-    const { error: insertError } = await supabase
+    console.log(`[Edit Transaction API] Inserting ${transactions.length} new transactions for session ${sessionId}`);
+    const { data: insertedTransactions, error: insertError } = await supabase
       .from('recycling_transactions')
-      .insert(transactions);
+      .insert(transactions)
+      .select();
 
     if (insertError) {
+      console.error('[Edit Transaction API] Error inserting new transactions:', insertError);
       return NextResponse.json(
         { error: `Failed to update transactions: ${insertError.message}` },
         { status: 500 }
       );
     }
+
+    console.log(`[Edit Transaction API] Successfully updated session ${sessionId}: Deleted ${oldTransactions?.length || 0} transactions, inserted ${insertedTransactions?.length || 0} transactions`);
 
     // Recalculate points difference and update recycler's points_total
     // (weightBasedItems already defined above)
@@ -277,12 +284,14 @@ export async function DELETE(request, { params }) {
     });
 
     // Delete transactions first
+    console.log(`[Delete Transaction API] Deleting ${oldTransactions?.length || 0} transactions for session ${sessionId}`);
     const { error: txError } = await supabase
       .from('recycling_transactions')
       .delete()
       .eq('session_id', sessionId);
 
     if (txError) {
+      console.error('[Delete Transaction API] Error deleting transactions:', txError);
       return NextResponse.json(
         { error: `Failed to delete transactions: ${txError.message}` },
         { status: 500 }
@@ -290,17 +299,21 @@ export async function DELETE(request, { params }) {
     }
 
     // Delete the session
+    console.log(`[Delete Transaction API] Deleting session ${sessionId}`);
     const { error: sessionDeleteError } = await supabase
       .from('recycling_sessions')
       .delete()
       .eq('id', sessionId);
 
     if (sessionDeleteError) {
+      console.error('[Delete Transaction API] Error deleting session:', sessionDeleteError);
       return NextResponse.json(
         { error: `Failed to delete session: ${sessionDeleteError.message}` },
         { status: 500 }
       );
     }
+
+    console.log(`[Delete Transaction API] Successfully deleted session ${sessionId} and ${oldTransactions?.length || 0} transactions`);
 
     // Update recycler's points_total
     if (pointsToDeduct > 0) {

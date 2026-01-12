@@ -31,7 +31,7 @@ export async function GET(request) {
             .from('recycling_transactions')
             .select('*')
             .gte('created_at', startDate.toISOString())
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false }); // Newest first
 
         if (txError) throw txError;
 

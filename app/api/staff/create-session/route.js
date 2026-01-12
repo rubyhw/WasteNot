@@ -97,6 +97,7 @@ export async function POST(request) {
     );
 
     // Create recycling session
+    console.log(`[Create Session API] Creating session for recycler ${recyclerId} at centre ${collectionCentreId}`);
     const { data: session, error: sessionError } = await supabase
       .from('recycling_sessions')
       .insert({
@@ -107,6 +108,7 @@ export async function POST(request) {
       .single();
 
     if (sessionError) {
+      console.error('[Create Session API] Error creating session:', sessionError);
       return NextResponse.json(
         { error: `Failed to create session: ${sessionError.message}` },
         { status: 500 }
@@ -114,6 +116,7 @@ export async function POST(request) {
     }
 
     const sessionId = session.id;
+    console.log(`[Create Session API] Session created successfully with ID: ${sessionId}`);
 
     // Fetch item details to check measurement type
     const itemIds = validItems.map(item => item.itemId);
@@ -148,11 +151,14 @@ export async function POST(request) {
       };
     });
 
-    const { error: transactionsError } = await supabase
+    console.log(`[Create Session API] Creating ${transactions.length} transactions for session ${sessionId}`);
+    const { data: insertedTransactions, error: transactionsError } = await supabase
       .from('recycling_transactions')
-      .insert(transactions);
+      .insert(transactions)
+      .select();
 
     if (transactionsError) {
+      console.error('[Create Session API] Error creating transactions:', transactionsError);
       // Rollback: delete the session if transactions fail
       await supabase
         .from('recycling_sessions')
@@ -164,6 +170,8 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    console.log(`[Create Session API] Successfully created ${insertedTransactions?.length || 0} transactions`);
 
     // Calculate total points earned and update recycler's points_total
     let totalPoints = 0;

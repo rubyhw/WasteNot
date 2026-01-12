@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../contexts';
 import { useLanguage } from '../contexts/LanguageContexts';
 import { supabase } from '@/lib/supabase';
@@ -9,8 +9,11 @@ import { RECYCLABLE_ITEMS } from '../config/recyclableItems';
 
 export default function ReportsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isCentreStaff, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const prevPathnameRef = useRef(pathname);
+  const isNavigatingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -31,9 +34,11 @@ export default function ReportsPage() {
       }
 
       // Fetch current year's transactions; month filter is done client-side
-      const response = await fetch('/api/staff/transactions?period=year', {
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`/api/staff/transactions?period=year&_t=${Date.now()}`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache',
         },
       });
 
@@ -43,7 +48,9 @@ export default function ReportsPage() {
         throw new Error(data.error || 'Failed to load report data');
       }
 
-      setTransactions(data.transactions || []);
+      const transactionsData = data.transactions || [];
+      console.log(`[Reports Page] Received ${transactionsData.length} transactions at ${new Date().toLocaleTimeString()}`);
+      setTransactions(transactionsData);
     } catch (err) {
       console.error('Error loading report data:', err);
       setError(err.message || 'Error loading report data');
@@ -52,6 +59,7 @@ export default function ReportsPage() {
     }
   }, []);
 
+  // Fetch data on initial load
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
@@ -62,9 +70,87 @@ export default function ReportsPage() {
         router.push('/');
         return;
       }
-      fetchYearData();
+      if (pathname === '/reports') {
+        // Only fetch immediately if we're not navigating from another page
+        if (!isNavigatingRef.current) {
+          console.log('[Reports Page] Fetching report data (initial load)...');
+          fetchYearData();
+        } else {
+          console.log('[Reports Page] Skipping initial fetch - navigation refresh will handle it');
+          isNavigatingRef.current = false;
+        }
+      }
     }
-  }, [user, isCentreStaff, authLoading, router, fetchYearData]);
+  }, [user, isCentreStaff, authLoading, router, fetchYearData, pathname]);
+
+  // Refresh report data when navigating TO this page (e.g., after creating a session)
+  useEffect(() => {
+    if (!user || !isCentreStaff || authLoading) return;
+    
+    // Check if we just navigated TO this page (pathname changed from something else to /reports)
+    const justNavigatedToPage = prevPathnameRef.current !== pathname && pathname === '/reports';
+    
+    if (pathname !== '/reports') {
+      prevPathnameRef.current = pathname;
+      isNavigatingRef.current = false;
+      return;
+    }
+
+    if (justNavigatedToPage) {
+      console.log('[Reports Page] Just navigated to reports page, refreshing...');
+      isNavigatingRef.current = true;
+      
+      // Multiple refreshes with increasing delays to ensure we get the latest data
+      const timeout1 = setTimeout(() => {
+        console.log('[Reports Page] First refresh (2s delay)...');
+        fetchYearData();
+      }, 2000);
+      
+      const timeout2 = setTimeout(() => {
+        console.log('[Reports Page] Second refresh (4s delay)...');
+        fetchYearData();
+      }, 4000);
+      
+      const timeout3 = setTimeout(() => {
+        console.log('[Reports Page] Third refresh (6s delay)...');
+        fetchYearData();
+        isNavigatingRef.current = false;
+      }, 6000);
+      
+      prevPathnameRef.current = pathname;
+      
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+      };
+    }
+  }, [pathname, user, isCentreStaff, authLoading, fetchYearData]);
+
+  // Refresh when page becomes visible
+  useEffect(() => {
+    if (!user || !isCentreStaff || authLoading) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Reports Page] Page became visible, refreshing...');
+        fetchYearData();
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('[Reports Page] Window focused, refreshing...');
+      fetchYearData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, isCentreStaff, authLoading, fetchYearData]);
 
 
 

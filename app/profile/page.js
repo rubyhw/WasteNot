@@ -135,9 +135,14 @@ export default function ProfilePage() {
 
       // --- ADDED: Fetch Leaderboard Data ---
       try {
-        const lbRes = await fetch('/api/leaderboard');
+        const lbRes = await fetch(`/api/leaderboard?_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
         const lbData = await lbRes.json();
         if (lbData.leaderboard) {
+          console.log('[Profile Page] Leaderboard fetched:', lbData.leaderboard.length, 'users');
           setLeaderboard(lbData.leaderboard);
         }
       } catch (err) {
@@ -169,6 +174,32 @@ export default function ProfilePage() {
       fetchUserData();
     }
   }, [user, authLoading, router, fetchUserData]);
+
+  // Fetch leaderboard when leaderboard tab is active
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const lbRes = await fetch(`/api/leaderboard?_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+      const lbData = await lbRes.json();
+      if (lbData.leaderboard) {
+        console.log('[Profile Page] Leaderboard refreshed:', lbData.leaderboard.length, 'users');
+        setLeaderboard(lbData.leaderboard);
+      }
+    } catch (err) {
+      console.error("Leaderboard fetch error", err);
+    }
+  }, []);
+
+  // Refresh leaderboard when tab is switched to leaderboard
+  useEffect(() => {
+    if (activeTab === 'leaderboard' && user) {
+      console.log('[Profile Page] Leaderboard tab activated, fetching latest data...');
+      fetchLeaderboard();
+    }
+  }, [activeTab, user, fetchLeaderboard]);
 
   // --- ADDED: Redeem Function Logic ---
   const handleRedeem = async (voucher) => {

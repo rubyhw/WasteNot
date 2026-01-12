@@ -134,12 +134,14 @@ export default function TransactionsPage() {
       // Create a function to fetch all transactions (without recycler filter)
       const fetchAllTransactions = async () => {
         try {
+          setLoading(true);
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) {
             throw new Error('Not authenticated');
           }
 
           const url = `/api/staff/transactions?_t=${Date.now()}`;
+          console.log(`[Transactions Page] Fetching all transactions from: ${url}`);
           const response = await fetch(url, {
             headers: {
               'Authorization': `Bearer ${session.access_token}`,
@@ -154,11 +156,19 @@ export default function TransactionsPage() {
 
           const transactionsData = data.transactions || [];
           console.log(`[Transactions Page] Fetched ${transactionsData.length} transactions (all, no filter)`);
+          if (transactionsData.length > 0) {
+            console.log('[Transactions Page] First transaction (newest):', transactionsData[0]);
+            console.log('[Transactions Page] First transaction session_id:', transactionsData[0].session_id);
+            console.log('[Transactions Page] First transaction recycler:', transactionsData[0].recycler);
+            console.log('[Transactions Page] First transaction collection_centre_id:', transactionsData[0].collection_centre_id);
+          }
           setTransactions(transactionsData);
           setCentreTotals(data.centreTotals || {});
           setRecyclerTotals(null);
         } catch (err) {
           console.error('Error fetching all transactions:', err);
+        } finally {
+          setLoading(false);
         }
       };
       
@@ -278,6 +288,16 @@ export default function TransactionsPage() {
       console.log('[Transactions Page] No transactions to group');
       return [];
     }
+
+    console.log(`[Transactions Page] Grouping ${transactions.length} transactions into sessions`);
+    console.log('[Transactions Page] Sample transactions:', transactions.slice(0, 3).map(tx => ({
+      id: tx.id,
+      session_id: tx.session_id,
+      recycler_id: tx.recycler_id,
+      recycler: tx.recycler,
+      collection_centre_id: tx.collection_centre_id,
+      created_at: tx.created_at
+    })));
 
     const groupedSessions = transactions.reduce((groups, tx) => {
       const sessionId = tx.session_id || tx.id;

@@ -145,10 +145,21 @@ export async function GET(request) {
       }
 
       if (pageData && pageData.length > 0) {
+        console.log(`[Transactions API] Page ${page}: Fetched ${pageData.length} transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
+        if (pageData.length > 0 && page === 0) {
+          console.log(`[Transactions API] First page - Latest transaction:`, {
+            id: pageData[0].id,
+            session_id: pageData[0].session_id,
+            recycler_id: pageData[0].recycler_id,
+            collection_centre_id: pageData[0].collection_centre_id,
+            created_at: pageData[0].created_at
+          });
+        }
         allTransactions = [...allTransactions, ...pageData];
         page++;
         hasMore = pageData.length === pageSize;
       } else {
+        console.log(`[Transactions API] Page ${page}: No more transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
         hasMore = false;
       }
     }
@@ -156,11 +167,16 @@ export async function GET(request) {
     const transactions = allTransactions;
 
     // Debug: Log transaction count and latest transaction
-    console.log(`[Transactions API] Fetched ${transactions.length} transactions for collection centre ${collectionCentreId}`);
+    console.log(`[Transactions API] Fetched ${transactions.length} transactions for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
     if (transactions.length > 0) {
       console.log(`[Transactions API] Latest transaction created_at: ${transactions[0].created_at}`);
       console.log(`[Transactions API] Latest transaction session_id: ${transactions[0].session_id}`);
+      console.log(`[Transactions API] Latest transaction recycler_id: ${transactions[0].recycler_id}`);
+      console.log(`[Transactions API] Latest transaction recycler:`, transactions[0].recycler);
+      console.log(`[Transactions API] Latest transaction collection_centre_id: ${transactions[0].collection_centre_id}`);
       console.log(`[Transactions API] Latest transaction session:`, transactions[0].session);
+    } else {
+      console.log(`[Transactions API] No transactions found for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
     }
 
     // Fetch item names from recyclable_items table

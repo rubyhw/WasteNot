@@ -131,20 +131,52 @@ export default function TransactionsPage() {
         setRecyclerSearch('');
       }
       
+      // Create a function to fetch all transactions (without recycler filter)
+      const fetchAllTransactions = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            throw new Error('Not authenticated');
+          }
+
+          const url = `/api/staff/transactions?_t=${Date.now()}`;
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Cache-Control': 'no-cache',
+            },
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to fetch transactions');
+          }
+
+          const transactionsData = data.transactions || [];
+          console.log(`[Transactions Page] Fetched ${transactionsData.length} transactions (all, no filter)`);
+          setTransactions(transactionsData);
+          setCentreTotals(data.centreTotals || {});
+          setRecyclerTotals(null);
+        } catch (err) {
+          console.error('Error fetching all transactions:', err);
+        }
+      };
+      
       // Multiple refreshes with increasing delays to ensure we get the latest data
+      // Use fetchAllTransactions to explicitly fetch without any recycler filter
       const timeout1 = setTimeout(() => {
-        console.log('[Transactions Page] First refresh (2s delay)...');
-        fetchTransactions();
+        console.log('[Transactions Page] First refresh (2s delay) - fetching all transactions...');
+        fetchAllTransactions();
       }, 2000);
       
       const timeout2 = setTimeout(() => {
-        console.log('[Transactions Page] Second refresh (4s delay)...');
-        fetchTransactions();
+        console.log('[Transactions Page] Second refresh (4s delay) - fetching all transactions...');
+        fetchAllTransactions();
       }, 4000);
       
       const timeout3 = setTimeout(() => {
-        console.log('[Transactions Page] Third refresh (6s delay)...');
-        fetchTransactions();
+        console.log('[Transactions Page] Third refresh (6s delay) - fetching all transactions...');
+        fetchAllTransactions();
         isNavigatingRef.current = false;
       }, 6000);
       

@@ -101,9 +101,6 @@ export default function Header() {
                   <span className="user-name">
                     {profile?.full_name || user.email}
                   </span>
-                  {role === 'admin' && (
-                    <span className="user-role" style={{ background: '#dc2626' }}>Admin</span>
-                  )}
                   {isCentreStaff && (
                     <span className="user-role">Centre Staff</span>
                   )}

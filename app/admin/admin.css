@@ -219,6 +219,12 @@
   border-radius: 16px 16px 0 0;
 }
 
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 /* Modal & Forms */
 .modal-overlay {
   position: fixed;

@@ -34,12 +34,16 @@ export default function ReportsPage() {
       }
 
       // Fetch current year's transactions; month filter is done client-side
-      // Add cache-busting timestamp to ensure fresh data
-      const response = await fetch(`/api/staff/transactions?period=year&_t=${Date.now()}`, {
+      // Add aggressive cache-busting for Vercel deployment
+      const response = await fetch(`/api/staff/transactions?period=year&_t=${Date.now()}&_r=${Math.random()}`, {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
+        cache: 'no-store', // Force no caching for Vercel
       });
 
       const data = await response.json();

@@ -52,15 +52,19 @@ export default function TransactionsPage() {
       }
 
       const url = selectedRecycler 
-        ? `/api/staff/transactions?recyclerId=${selectedRecycler.id}&_t=${Date.now()}`
-        : `/api/staff/transactions?_t=${Date.now()}`;
+        ? `/api/staff/transactions?recyclerId=${selectedRecycler.id}&_t=${Date.now()}&_r=${Math.random()}`
+        : `/api/staff/transactions?_t=${Date.now()}&_r=${Math.random()}`;
 
-      // Add cache-busting timestamp to ensure fresh data
+      // Add aggressive cache-busting for Vercel deployment
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
+        cache: 'no-store', // Force no caching
       });
 
       const data = await response.json();
@@ -140,13 +144,17 @@ export default function TransactionsPage() {
             throw new Error('Not authenticated');
           }
 
-          const url = `/api/staff/transactions?_t=${Date.now()}`;
+          const url = `/api/staff/transactions?_t=${Date.now()}&_r=${Math.random()}`;
           console.log(`[Transactions Page] Fetching all transactions from: ${url}`);
           const response = await fetch(url, {
+            method: 'GET',
             headers: {
               'Authorization': `Bearer ${session.access_token}`,
-              'Cache-Control': 'no-cache',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0',
             },
+            cache: 'no-store', // Force no caching for Vercel
           });
 
           const data = await response.json();

@@ -232,11 +232,19 @@ export async function GET(request) {
       displayQuantity: getDisplayQuantity(tx.item_id, tx.quantity),
     }));
 
-    return NextResponse.json({
+    // Set cache headers to prevent Vercel from caching this response
+    const response = NextResponse.json({
       transactions: displayTransactions,
       centreTotals,
       recyclerTotals: recyclerId ? recyclerTotals : null,
     });
+    
+    // Prevent caching on Vercel
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   } catch (err) {
     return NextResponse.json(
       { error: err.message || 'Internal server error' },

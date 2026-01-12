@@ -18,10 +18,11 @@ export async function GET() {
     // 2. Initialize Supabase Client directly (Bypassing the missing file)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 3. Fetch top 10 users by points_total
+    // 3. Fetch top 10 recycler users by points_total (exclude centre_staff and admin)
     const { data, error } = await supabase
       .from('profiles')
       .select('id, full_name, points_total, public_id')
+      .eq('role', 'recycler')
       .order('points_total', { ascending: false })
       .limit(10);
 

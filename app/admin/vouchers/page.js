@@ -7,7 +7,6 @@ export default function VouchersPage() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [term, setTerm] = useState("");
-    const [leaders, setLeaders] = useState([]);
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,15 +24,6 @@ export default function VouchersPage() {
     const [formLoading, setFormLoading] = useState(false);
 
 useEffect(() => {
-    (async () => {
-        try {
-            const res = await fetch('/api/leaderboard');
-            const data = await res.json();
-            setLeaders(data);
-        } catch (error) {
-            console.error(error);
-        }
-    })();
     loadData();
 }, []);
 
@@ -146,15 +136,10 @@ useEffect(() => {
             </div>
 
             {/* Main Grid Layout */}
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr 350px', 
-                gap: '24px', 
-                alignItems: 'start' 
-            }}>
-            
-            {/* LEFT COLUMN: Vouchers Table */}
-            <div className="table-container" style={{ margin: 0 }}>
+            <div>
+
+            {/* Vouchers Table */}
+            <div className="table-container">
                 <div className="table-actions-header">
                     <div style={{ position: 'relative' }}>
                         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />

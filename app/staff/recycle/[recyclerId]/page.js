@@ -288,16 +288,6 @@ export default function RecyclePage() {
                     value={quantities[item.id] === '' || quantities[item.id] === undefined ? '' : quantities[item.id]}
                     onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
                     className="quantity-input"
-                    style={{
-                      width: '60px',
-                      textAlign: 'center',
-                      border: '1px solid var(--border, #e0e0e0)',
-                      borderRadius: '4px',
-                      padding: '8px',
-                      fontSize: '16px',
-                      backgroundColor: 'var(--card, #fff)',
-                      color: 'var(--text, #000)'
-                    }}
                   />
                   <button
                     className="quantity-btn plus"

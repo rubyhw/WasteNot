@@ -26,6 +26,8 @@ export default function TransactionsPage() {
   const [editItems, setEditItems] = useState([]);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const sessionsPerPage = 10;
 
   useEffect(() => {
     // Check if user is authenticated and is centre_staff
@@ -207,6 +209,7 @@ export default function TransactionsPage() {
   const clearRecyclerFilter = () => {
     setSelectedRecycler(null);
     setRecyclerSearch('');
+    setCurrentPage(1); // Reset to first page when clearing filter
   };
 
   const formatDate = (dateString) => {
@@ -327,6 +330,17 @@ export default function TransactionsPage() {
     
     return sessions;
   }, [transactions]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(sessionList.length / sessionsPerPage);
+  const startIndex = (currentPage - 1) * sessionsPerPage;
+  const endIndex = startIndex + sessionsPerPage;
+  const paginatedSessions = sessionList.slice(startIndex, endIndex);
+
+  // Reset to page 1 when recycler filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRecycler]);
 
   const toggleSessionSelected = (sessionId) => {
     setSelectedSessions((prev) =>
@@ -614,16 +628,18 @@ export default function TransactionsPage() {
             </p>
           </div>
         ) : (
-          <div className="transactions-list">
-            {sessionList && sessionList.length > 0 ? (
-              sessionList.map((session, index) => {
-                if (!session || !session.sessionId) {
-                  console.warn('[Transactions Page] Invalid session:', session);
-                  return null;
-                }
-                console.log(`[Transactions Page] Rendering session ${index}:`, session.sessionId, 'with', session.items?.length || 0, 'items');
-                return (
-              <div key={session.sessionId || `session-${index}`} className="transaction-card">
+          <>
+            <div className="transactions-list">
+              {paginatedSessions && paginatedSessions.length > 0 ? (
+                paginatedSessions.map((session, sessionIndex) => {
+                  const index = startIndex + sessionIndex;
+                  if (!session || !session.sessionId) {
+                    console.warn('[Transactions Page] Invalid session:', session);
+                    return null;
+                  }
+                  console.log(`[Transactions Page] Rendering session ${index}:`, session.sessionId, 'with', session.items?.length || 0, 'items');
+                  return (
+                    <div key={session.sessionId || `session-${index}`} className="transaction-card">
                 <div className="transaction-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {isDeleteMode && (
@@ -696,15 +712,62 @@ export default function TransactionsPage() {
                     </span>
                   </div>
                 </div>
-              </div>
-                );
-              })
-            ) : (
-              <div className="empty-state">
-                <p>No sessions to display</p>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="empty-state">
+                  <p>No sessions to display</p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {sessionList.length > sessionsPerPage && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                gap: '12px', 
+                marginTop: '32px',
+                padding: '20px',
+                background: 'var(--card)',
+                borderRadius: '12px',
+                border: '1px solid var(--border)'
+              }}>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Previous
+                </button>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '8px', 
+                  alignItems: 'center',
+                  fontSize: '14px',
+                  color: 'var(--text)'
+                }}>
+                  <span>Page</span>
+                  <span style={{ fontWeight: 600 }}>{currentPage}</span>
+                  <span>of</span>
+                  <span style={{ fontWeight: 600 }}>{totalPages}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '8px 16px' }}
+                >
+                  Next
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 

@@ -123,6 +123,14 @@ export default function TransactionsPage() {
       console.log('[Transactions Page] Just navigated to transactions page, refreshing...');
       isNavigatingRef.current = true;
       
+      // Clear any recycler filter to show all transactions when navigating from record recycling
+      // This ensures new transactions appear in the "all transactions" view
+      if (selectedRecycler) {
+        console.log('[Transactions Page] Clearing recycler filter to show all transactions');
+        setSelectedRecycler(null);
+        setRecyclerSearch('');
+      }
+      
       // Multiple refreshes with increasing delays to ensure we get the latest data
       const timeout1 = setTimeout(() => {
         console.log('[Transactions Page] First refresh (2s delay)...');

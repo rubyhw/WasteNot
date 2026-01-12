@@ -162,10 +162,13 @@ export default function RecyclePage() {
       }
 
       console.log('[Recycle Page] Session created successfully, redirecting to transactions');
-      
+
       // Success - redirect to transactions page to see the new session
       // Use replace to avoid back button issues and ensure clean navigation
-      router.replace('/transactions');
+      // Add a small delay to ensure database commit completes
+      setTimeout(() => {
+        router.replace('/transactions');
+      }, 500);
     } catch (err) {
       setError(err.message || 'An error occurred while submitting');
     } finally {

@@ -2,13 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+// Prevent Vercel from caching this route
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function GET(request) {
   try {
+    // Generate unique request ID to prevent Vercel edge caching
+    const requestId = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    console.log(`[Transactions API] Request ${requestId} - Starting fetch (recyclerId: ${new URL(request.url).searchParams.get('recyclerId') || 'none'})`);
+    
     // Get authenticated user (staff) ID
     let user = null;
     
@@ -145,21 +153,22 @@ export async function GET(request) {
       }
 
       if (pageData && pageData.length > 0) {
-        console.log(`[Transactions API] Page ${page}: Fetched ${pageData.length} transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
+        console.log(`[Transactions API] Request ${requestId} - Page ${page}: Fetched ${pageData.length} transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
         if (pageData.length > 0 && page === 0) {
-          console.log(`[Transactions API] First page - Latest transaction:`, {
+          console.log(`[Transactions API] Request ${requestId} - First page - Latest transaction:`, {
             id: pageData[0].id,
             session_id: pageData[0].session_id,
             recycler_id: pageData[0].recycler_id,
             collection_centre_id: pageData[0].collection_centre_id,
-            created_at: pageData[0].created_at
+            created_at: pageData[0].created_at,
+            recycler: pageData[0].recycler
           });
         }
         allTransactions = [...allTransactions, ...pageData];
         page++;
         hasMore = pageData.length === pageSize;
       } else {
-        console.log(`[Transactions API] Page ${page}: No more transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
+        console.log(`[Transactions API] Request ${requestId} - Page ${page}: No more transactions (recyclerId: ${recyclerId || 'none'}, collectionCentreId: ${collectionCentreId})`);
         hasMore = false;
       }
     }
@@ -167,16 +176,16 @@ export async function GET(request) {
     const transactions = allTransactions;
 
     // Debug: Log transaction count and latest transaction
-    console.log(`[Transactions API] Fetched ${transactions.length} transactions for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
+    console.log(`[Transactions API] Request ${requestId} - Fetched ${transactions.length} transactions for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
     if (transactions.length > 0) {
-      console.log(`[Transactions API] Latest transaction created_at: ${transactions[0].created_at}`);
-      console.log(`[Transactions API] Latest transaction session_id: ${transactions[0].session_id}`);
-      console.log(`[Transactions API] Latest transaction recycler_id: ${transactions[0].recycler_id}`);
-      console.log(`[Transactions API] Latest transaction recycler:`, transactions[0].recycler);
-      console.log(`[Transactions API] Latest transaction collection_centre_id: ${transactions[0].collection_centre_id}`);
-      console.log(`[Transactions API] Latest transaction session:`, transactions[0].session);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction created_at: ${transactions[0].created_at}`);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction session_id: ${transactions[0].session_id}`);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction recycler_id: ${transactions[0].recycler_id}`);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction recycler:`, transactions[0].recycler);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction collection_centre_id: ${transactions[0].collection_centre_id}`);
+      console.log(`[Transactions API] Request ${requestId} - Latest transaction session:`, transactions[0].session);
     } else {
-      console.log(`[Transactions API] No transactions found for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
+      console.log(`[Transactions API] Request ${requestId} - No transactions found for collection centre ${collectionCentreId} (recyclerId filter: ${recyclerId || 'none'})`);
     }
 
     // Fetch item names from recyclable_items table
@@ -237,12 +246,19 @@ export async function GET(request) {
       transactions: displayTransactions,
       centreTotals,
       recyclerTotals: recyclerId ? recyclerTotals : null,
+      _requestId: requestId, // Include request ID for debugging
+      _timestamp: new Date().toISOString(), // Include timestamp to verify freshness
     });
     
-    // Prevent caching on Vercel
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+    // Aggressively prevent caching on Vercel (edge and CDN)
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
+    response.headers.set('CDN-Cache-Control', 'no-store');
+    response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+    response.headers.set('X-Request-ID', requestId);
+    
+    console.log(`[Transactions API] Request ${requestId} - Returning ${displayTransactions.length} transactions with no-cache headers`);
     
     return response;
   } catch (err) {

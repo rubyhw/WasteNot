@@ -75,9 +75,15 @@ export default function TransactionsPage() {
 
       const transactionsData = data.transactions || [];
       console.log(`[Transactions Page] Received ${transactionsData.length} transactions at ${new Date().toLocaleTimeString()}`);
+      console.log(`[Transactions Page] Response timestamp: ${data._timestamp || 'not provided'}`);
+      console.log(`[Transactions Page] Response request ID: ${data._requestId || 'not provided'}`);
       if (transactionsData.length > 0) {
-        console.log('[Transactions Page] First transaction:', transactionsData[0]);
-        console.log('[Transactions Page] Last transaction:', transactionsData[transactionsData.length - 1]);
+        console.log('[Transactions Page] First transaction (newest):', transactionsData[0]);
+        console.log('[Transactions Page] First transaction session_id:', transactionsData[0].session_id);
+        console.log('[Transactions Page] First transaction created_at:', transactionsData[0].created_at);
+        console.log('[Transactions Page] Last transaction (oldest):', transactionsData[transactionsData.length - 1]);
+      } else {
+        console.warn('[Transactions Page] WARNING: No transactions returned from API!');
       }
       
       setTransactions(transactionsData);
@@ -164,11 +170,16 @@ export default function TransactionsPage() {
 
           const transactionsData = data.transactions || [];
           console.log(`[Transactions Page] Fetched ${transactionsData.length} transactions (all, no filter)`);
+          console.log(`[Transactions Page] Response timestamp: ${data._timestamp || 'not provided'}`);
+          console.log(`[Transactions Page] Response request ID: ${data._requestId || 'not provided'}`);
           if (transactionsData.length > 0) {
             console.log('[Transactions Page] First transaction (newest):', transactionsData[0]);
             console.log('[Transactions Page] First transaction session_id:', transactionsData[0].session_id);
             console.log('[Transactions Page] First transaction recycler:', transactionsData[0].recycler);
             console.log('[Transactions Page] First transaction collection_centre_id:', transactionsData[0].collection_centre_id);
+            console.log('[Transactions Page] First transaction created_at:', transactionsData[0].created_at);
+          } else {
+            console.warn('[Transactions Page] WARNING: No transactions returned from API!');
           }
           setTransactions(transactionsData);
           setCentreTotals(data.centreTotals || {});

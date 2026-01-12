@@ -692,6 +692,21 @@ h3 {
   font-size: 16px;
 }
 
+.detail-item-timestamp {
+  align-items: flex-end;
+  text-align: right;
+  grid-column: -1;
+  justify-self: end;
+}
+
+.detail-item-timestamp .detail-label {
+  text-align: right;
+}
+
+.detail-item-timestamp .detail-value {
+  text-align: right;
+}
+
 .loading,
 .empty-state {
   text-align: center;

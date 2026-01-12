@@ -73,12 +73,34 @@ export default function RecyclePage() {
 
   const handleQuantityChange = (itemId, delta) => {
     setQuantities(prev => {
-      const newValue = (prev[itemId] || 0) + delta;
+      const currentValue = prev[itemId];
+      const numValue = typeof currentValue === 'string' && currentValue === '' ? 0 : (currentValue || 0);
+      const newValue = numValue + delta;
       return {
         ...prev,
         [itemId]: Math.max(0, newValue), // Ensure quantity doesn't go below 0
       };
     });
+  };
+
+  const handleQuantityInputChange = (itemId, value) => {
+    // Allow empty string for clearing input
+    if (value === '') {
+      setQuantities(prev => ({
+        ...prev,
+        [itemId]: '',
+      }));
+      return;
+    }
+
+    // Validate and parse numeric input
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setQuantities(prev => ({
+        ...prev,
+        [itemId]: numValue,
+      }));
+    }
   };
 
   const handleWeightChange = (itemId, value) => {
@@ -259,7 +281,24 @@ export default function RecyclePage() {
                   >
                     −
                   </button>
-                  <div className="quantity-display">{quantities[item.id] || 0}</div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={quantities[item.id] === '' || quantities[item.id] === undefined ? '' : quantities[item.id]}
+                    onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                    className="quantity-input"
+                    style={{
+                      width: '60px',
+                      textAlign: 'center',
+                      border: '1px solid var(--border, #e0e0e0)',
+                      borderRadius: '4px',
+                      padding: '8px',
+                      fontSize: '16px',
+                      backgroundColor: 'var(--card, #fff)',
+                      color: 'var(--text, #000)'
+                    }}
+                  />
                   <button
                     className="quantity-btn plus"
                     onClick={() => handleQuantityChange(item.id, 1)}

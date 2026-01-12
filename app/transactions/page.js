@@ -784,7 +784,7 @@ export default function TransactionsPage() {
                       </span>
                     </div>
                   )}
-                  <div className="detail-item">
+                  <div className="detail-item detail-item-timestamp">
                     <span className="detail-label">Timestamp:</span>
                     <span className="detail-value">
                       {formatDate(session.created_at)}

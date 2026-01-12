@@ -200,9 +200,10 @@ export async function POST(request) {
       publicIdForProfile = await generateSequentialPublicId();
       console.log('Generated public_id for recycler:', publicIdForProfile);
     } else if (validRole === 'centre_staff') {
-      // Explicitly set public_id to NULL for centre_staff users
-      publicIdForProfile = null;
-      console.log('Setting public_id to NULL for centre_staff user');
+      // Set public_id to the string "centre_staff" for centre_staff users
+      // This ensures it's not NULL but clearly identifies them as centre_staff
+      publicIdForProfile = 'centre_staff';
+      console.log('Setting public_id to "centre_staff" for centre_staff user');
     }
     
     const profileData = {
@@ -210,7 +211,7 @@ export async function POST(request) {
       full_name: trimmedFullName,
       role: validRole, // 'centre_staff' or 'recycler'
       points_total: 0, // Initialize points to 0 for new users
-      public_id: publicIdForProfile // Sequential ID in format WN0000031 only for recyclers, NULL for centre_staff
+      public_id: publicIdForProfile // Sequential ID in format WN0000031 for recyclers, "centre_staff" for centre_staff users
       // created_at is handled by database default/trigger
     };
     

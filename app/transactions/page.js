@@ -42,7 +42,7 @@ export default function TransactionsPage() {
       }
     }
   }, [user, isCentreStaff, authLoading, router]);
-
+//
   const fetchTransactions = useCallback(async () => {
     try {
       setLoading(true);
@@ -295,6 +295,21 @@ export default function TransactionsPage() {
     });
   };
 
+  // Format date in UTC to match Supabase display
+  const formatDateUTC = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    // Display in UTC to match Supabase
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    }) + ' UTC';
+  };
+
   const getItemName = (itemId) => {
     const item = RECYCLABLE_ITEMS.find(i => i.id === itemId);
     return item ? item.name : `Item ${itemId}`;
@@ -328,6 +343,18 @@ export default function TransactionsPage() {
       if (!groups[sessionId]) {
         // Use session's created_at if available, otherwise fall back to transaction's created_at
         const sessionCreatedAt = tx.session?.created_at || tx.created_at;
+        
+        // Debug: Log timestamp comparison to help identify discrepancies
+        if (tx.session?.created_at && tx.created_at && tx.session.created_at !== tx.created_at) {
+          console.log(`[Transactions Page] Timestamp mismatch for session ${sessionId}:`, {
+            session_created_at: tx.session.created_at,
+            transaction_created_at: tx.created_at,
+            session_utc: new Date(tx.session.created_at).toISOString(),
+            transaction_utc: new Date(tx.created_at).toISOString(),
+            difference_ms: new Date(tx.session.created_at).getTime() - new Date(tx.created_at).getTime(),
+          });
+        }
+        
         groups[sessionId] = {
           sessionId,
           recycler: tx.recycler,
@@ -785,9 +812,15 @@ export default function TransactionsPage() {
                     </div>
                   )}
                   <div className="detail-item detail-item-timestamp">
-                    <span className="detail-label">Timestamp:</span>
+                    <span className="detail-label">Timestamp (Local):</span>
                     <span className="detail-value">
                       {formatDate(session.created_at)}
+                    </span>
+                  </div>
+                  <div className="detail-item detail-item-timestamp" style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                    <span className="detail-label">Timestamp (UTC - matches Supabase):</span>
+                    <span className="detail-value">
+                      {formatDateUTC(session.created_at)}
                     </span>
                   </div>
                 </div>

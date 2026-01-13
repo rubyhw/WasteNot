@@ -1,5 +1,5 @@
 'use client';
-
+//record recycling pagee UI
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';

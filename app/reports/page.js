@@ -33,7 +33,6 @@ export default function ReportsPage() {
         throw new Error('Not authenticated');
       }
 
-      // Fetch current year's transactions; month filter is done client-side
       // Add aggressive cache-busting for Vercel deployment
       const response = await fetch(`/api/staff/transactions?period=year&_t=${Date.now()}&_r=${Math.random()}`, {
         method: 'GET',
@@ -220,13 +219,15 @@ export default function ReportsPage() {
       perItemTotals[key] += qty;
     });
 
-    const totalItems = Object.values(perItemTotals).reduce(
-      (sum, v) => sum + v,
-      0
-    );
-
     // Ranking among Plastic Bottle (1), Aluminium Tin (2), Glass (4)
     const targetIds = [1, 2, 4];
+    
+    // Calculate totalItems only for Plastic Bottle, Aluminium Tin, and Glass
+    const totalItems = targetIds.reduce((sum, id) => {
+      const cfg = RECYCLABLE_ITEMS.find((i) => i.id === id);
+      if (!cfg) return sum;
+      return sum + (perItemTotals[cfg.name] || 0);
+    }, 0);
     const plasticsMetalsRanking = targetIds
       .map((id) => {
         const cfg = RECYCLABLE_ITEMS.find((i) => i.id === id);

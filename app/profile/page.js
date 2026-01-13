@@ -23,7 +23,9 @@ export default function ProfilePage() {
   // --- ADDED: New State for Leaderboard and Redemptions ---
   const [leaderboard, setLeaderboard] = useState([]);
   const [redemptions, setRedemptions] = useState([]);
-  // --------------------------------------------------------
+  
+  // --- ADDED: State for QR Popup ---
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -100,11 +102,12 @@ export default function ProfilePage() {
         
         setTransactions(processedTransactions);
 
-        // --- ADDED: Fetch Redemptions to Calculate Net Points ---
+        // --- ADDED: Fetch Redemptions (Now with Voucher Name) ---
         const { data: redemptionData } = await supabase
           .from('voucher_redemptions')
-          .select('points_spent')
-          .eq('user_id', user.id);
+          .select('*, is_used, voucher:vouchers(name)')  // <--- This is the key change
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }); // Newest redemptions first
         
         const totalSpent = redemptionData?.reduce((acc, r) => acc + r.points_spent, 0) || 0;
         setRedemptions(redemptionData || []);
@@ -612,141 +615,173 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <div className="vouchers-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-              gap: '20px',
-              marginTop: '24px'
-            }}>
-              {vouchers.length === 0 ? (
-                <div style={{ 
-                  gridColumn: '1 / -1', 
-                  textAlign: 'center', 
-                  padding: '60px 20px',
-                  color: 'var(--muted)'
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'flex-start' }}>
+              
+              {/* LEFT: Catalogue */}
+              <div style={{ flex: '1', minWidth: '0' }}>
+                <div className="vouchers-grid" style={{ 
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px'
                 }}>
-                  <p style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>No vouchers available yet</p>
-                  <p>Check back later for exciting rewards!</p>
-                </div>
-              ) : (
-                vouchers.map((voucher) => {
-                  const canAfford = getTotalPoints() >= voucher.points_cost;
-                  return (
-                    <div 
-                      key={voucher.id} 
-                      className="voucher-card"
-                      style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        padding: '24px',
-                        backgroundColor: canAfford ? '#ffffff' : '#f9fafb',
-                        transition: 'all 0.2s',
-                        position: 'relative',
-                        opacity: canAfford ? 1 : 0.7
-                      }}
-                    >
-                      {!canAfford && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '12px',
-                          right: '12px',
-                          backgroundColor: '#fee2e2',
-                          color: '#dc2626',
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          Insufficient Points
-                        </div>
-                      )}
-                      
-                      <div style={{ marginBottom: '16px' }}>
-                        <div style={{
-                          width: '60px',
-                          height: '60px',
-                          borderRadius: '12px',
-                          backgroundColor: '#fef3c7',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '32px',
-                          marginBottom: '16px'
-                        }}>
-                          {/* Icon placeholder */}
-                          🎁
-                        </div>
-                        
-                        <h3 style={{ 
-                          fontSize: '20px', 
-                          fontWeight: '600', 
-                          marginBottom: '8px', 
-                          color: '#1f2937'
-                        }}>
-                          {voucher.name}
-                        </h3>
-                        
-                        <p style={{ 
-                          fontSize: '14px', 
-                          color: '#6b7280',
-                          minHeight: '40px',
-                          marginBottom: '16px'
-                        }}>
-                          {voucher.description || 'Redeem this voucher for great rewards!'}
-                        </p>
-                      </div>
-                      
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        paddingTop: '16px',
-                        borderTop: '1px solid #e5e7eb'
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <span style={{
-                            fontSize: '24px',
-                            fontWeight: '700',
-                            color: '#16a34a'
-                          }}>
-                            {voucher.points_cost}
-                          </span>
-                          <span style={{
-                            fontSize: '14px',
-                            color: '#6b7280',
-                            fontWeight: '500'
-                          }}>
-                            points
-                          </span>
-                        </div>
-                        
-                        {/* --- ADDED: Updated Button Logic --- */}
-                        <button
-                          className="btn primary small"
-                          disabled={!canAfford}
-                          style={{
-                            opacity: canAfford ? 1 : 0.5,
-                            cursor: canAfford ? 'pointer' : 'not-allowed'
-                          }}
-                          onClick={() => {
-                            if (canAfford) {
-                              handleRedeem(voucher);
-                            }
-                          }}
-                        >
-                          {canAfford ? 'Redeem' : 'Locked'}
-                        </button>
-                        {/* ---------------------------------- */}
-                      </div>
+                  {vouchers.length === 0 ? (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--muted)' }}>
+                      <p style={{ fontSize: '18px', fontWeight: '500' }}>No vouchers available yet</p>
                     </div>
-                  );
-                })
-              )}
+                  ) : (
+                    vouchers.map((voucher) => {
+                      const canAfford = getTotalPoints() >= voucher.points_cost;
+                      return (
+                        <div key={voucher.id} className="voucher-card" style={{
+                            border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px',
+                            backgroundColor: canAfford ? '#ffffff' : '#f9fafb',
+                            position: 'relative', opacity: canAfford ? 1 : 0.7
+                          }}>
+                          {!canAfford && (
+                            <div style={{
+                              position: 'absolute', top: '12px', right: '12px',
+                              backgroundColor: '#fee2e2', color: '#dc2626',
+                              padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600'
+                            }}>Insufficient Points</div>
+                          )}
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{
+                              width: '60px', height: '60px', borderRadius: '12px',
+                              backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '32px', marginBottom: '16px'
+                            }}>🎁</div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px', color: '#1f2937' }}>{voucher.name}</h3>
+                            <p style={{ fontSize: '14px', color: '#6b7280', minHeight: '40px' }}>{voucher.description || 'Redeem for rewards!'}</p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                            <span style={{ fontSize: '20px', fontWeight: '700', color: '#16a34a' }}>{voucher.points_cost} pts</span>
+                            <button className="btn primary small" disabled={!canAfford}
+                              style={{ opacity: canAfford ? 1 : 0.5, cursor: canAfford ? 'pointer' : 'not-allowed' }}
+                              onClick={() => canAfford && handleRedeem(voucher)}>
+                              {canAfford ? 'Redeem' : 'Locked'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT: History & Active */}
+              <div style={{ width: '350px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* 1. History Table */}
+                <div style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', borderBottom: '1px solid #f3f4f6', paddingBottom: '8px' }}>History</h3>
+                  {redemptions.length === 0 ? (
+                    <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center' }}>No history yet.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                      {redemptions.map((r) => (
+                        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '8px', backgroundColor: '#f9fafb', borderRadius: '6px' }}>
+                          <span style={{ color: '#374151' }}>{r.voucher?.name}</span>
+                          <span style={{ color: '#6b7280' }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Active Vouchers Table (Clickable) */}
+                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', borderBottom: '1px solid #bbf7d0', paddingBottom: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>🎫</span>
+                    <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#166534' }}>Active Vouchers</h3>
+                  </div>
+                  
+                  {redemptions.filter(r => r.is_used === false).length === 0 ? (
+                    <p style={{ fontSize: '14px', color: '#15803d', textAlign: 'center', opacity: 0.8 }}>No active vouchers.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {redemptions.filter(r => r.is_used === false).map((r) => (
+                        <div 
+                          key={r.id} 
+                          onClick={() => setSelectedVoucher(r)} // <--- CLICK TO OPEN MODAL
+                          style={{ 
+                            backgroundColor: 'white', padding: '12px', borderRadius: '8px', 
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #bbf7d0',
+                            cursor: 'pointer', transition: 'transform 0.1s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                          <div style={{ fontWeight: '600', color: '#166534', marginBottom: '4px' }}>{r.voucher?.name}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#ffffff', backgroundColor: '#16a34a', padding: '2px 8px', borderRadius: '10px' }}>
+                              CLICK TO USE
+                            </span>
+                            <span style={{ fontSize: '12px', color: '#15803d' }}>-{r.points_spent} pts</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* --- QR CODE MODAL --- */}
+            {selectedVoucher && (
+              <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 1000, backdropFilter: 'blur(4px)'
+              }} onClick={() => setSelectedVoucher(null)}>
+                <div style={{
+                  backgroundColor: 'white', padding: '30px', borderRadius: '20px',
+                  maxWidth: '350px', width: '90%', textAlign: 'center',
+                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  position: 'relative', animation: 'fadeIn 0.2s ease-out'
+                }} onClick={(e) => e.stopPropagation()}>
+                  
+                  {/* Close Button */}
+                  <button 
+                    onClick={() => setSelectedVoucher(null)}
+                    style={{
+                      position: 'absolute', top: '15px', right: '15px',
+                      background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#6b7280'
+                    }}
+                  >
+                    ×
+                  </button>
+
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1f2937', marginBottom: '8px' }}>
+                    {selectedVoucher.voucher?.name}
+                  </h3>
+                  <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
+                    Show this QR code to the merchant
+                  </p>
+
+                  {/* QR Code Image (Using Public API) */}
+                  <div style={{ padding: '15px', backgroundColor: 'white', borderRadius: '12px', border: '2px dashed #e5e7eb', display: 'inline-block', marginBottom: '20px' }}>
+                    <Image 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${selectedVoucher.id}`}
+                      alt="Voucher QR Code"
+                      width={200}
+                      height={200}
+                    />
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#9ca3af', fontFamily: 'monospace' }}>
+                    ID: {selectedVoucher.id.slice(0, 8)}...
+                  </div>
+
+                  <button 
+                    onClick={() => setSelectedVoucher(null)}
+                    className="btn primary"
+                    style={{ width: '100%', marginTop: '20px' }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+            {/* --------------------- */}
+
           </div>
         )}
 
